@@ -1,0 +1,94 @@
+{
+  "name": "@sagmans/dsh-plannotator",
+  "version": "0.1.0",
+  "description": "Plannotator browser review surfaces for the DeepSeek Harness terminal profile: plan review, code review, file annotation, and last-answer annotation, driven on demand from slash commands.",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "plugin",
+    "plannotator",
+    "plan-review",
+    "code-review",
+    "cordis",
+    "tui"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.19"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sagmans/dsh-plannotator.git"
+  },
+  "homepage": "https://github.com/sagmans/dsh-plannotator#readme",
+  "bugs": {
+    "url": "https://github.com/sagmans/dsh-plannotator/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "compatibility": {
+      "dsh": ">=0.1.5-rc.1 <0.1.6",
+      "dshReleases": {
+        "0.1.5-rc.2": "compatible"
+      },
+      "profiles": [
+        "tui"
+      ]
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx/esm --test \"tests/*.spec.ts\"",
+    "build": "tsc -p tsconfig.build.json",
+    "test:build": "node --test \"tests/*.test.mjs\"",
+    "pack-smoke": "node tools/pack-smoke.mjs",
+    "drive": "node tools/pty-drive.mjs",
+    "check": "pnpm run typecheck && pnpm test && pnpm run build && pnpm run test:build && pnpm run pack-smoke",
+    "prepack": "pnpm run build",
+    "prepublishOnly": "pnpm run typecheck && pnpm test"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-agent": ">=0.1.5-rc.1 <0.1.6",
+    "@deepseek-ai/dsh-commands": ">=0.1.5-rc.1 <0.1.6",
+    "@deepseek-ai/dsh-llm": ">=0.1.5-rc.1 <0.1.6",
+    "@deepseek-ai/dsh-session": ">=0.1.5-rc.1 <0.1.6",
+    "@deepseek-ai/schemastery": "^3.18.2"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/dsh-agent": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-commands": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-llm": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-session": "0.1.5-rc.2",
+    "@deepseek-ai/schemastery": "3.18.2",
+    "@types/node": "22.20.0",
+    "node-pty": "1.1.0",
+    "tsx": "4.22.4",
+    "typescript": "6.0.3"
+  }
+}

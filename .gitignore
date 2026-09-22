@@ -1,3 +1,6 @@
+# Local planning scratch: generated plans and specifications never ship.
+.plans/
+
 # Logs
 logs
 *.log
