@@ -138,21 +138,18 @@ The suite stops at the CLI boundary. To prove the whole loop, mount the bundle
 in a scratch profile, make the CLI publish its URL instead of opening a browser,
 and drive that page:
 
+Copy the profile you already work in — it carries the bundles and the patch that
+register your model route and credentials — then add this plugin to the copy.
+Dropping those rows leaves the profile without an adapter for the model its
+settings name, and the surface then answers from whichever provider it does
+have, which is a failure that looks like a plugin problem and is not one.
+
 ```bash
-# A profile that mounts this checkout beside the terminal surface.
-mkdir -p ~/.dsh/profiles/tui-plannotator-e2e
-cat > ~/.dsh/profiles/tui-plannotator-e2e/package.json <<'JSON'
-{
-  "name": "dsh-profile-tui-plannotator-e2e",
-  "private": true,
-  "dsh": { "profile": { "bundles": ["@deepseek-ai/dsh-base", "@sagmans/dsh-tui", "@sagmans/dsh-plannotator"] } },
-  "dependencies": {
-    "@sagmans/dsh-tui": "link:/path/to/dsh-tui",
-    "@sagmans/dsh-plannotator": "link:$PWD"
-  }
-}
-JSON
-dsh plugin --profile tui-plannotator-e2e install
+PROFILE=tui-plannotator-e2e
+cp -R ~/.dsh/profiles/tui ~/.dsh/profiles/$PROFILE
+cd ~/.dsh/profiles/$PROFILE
+# Add the plugin to dsh.profile.bundles and to dependencies, then:
+dsh plugin --profile $PROFILE install
 
 # Drive the surface, and let the CLI report where its review page lives.
 PLANNOTATOR_SKIP_BROWSER_OPEN=1 \
@@ -166,6 +163,11 @@ PLANNOTATOR_DATA_DIR=/tmp/plannotator-data \
 Open the URL from `/tmp/plannotator-ready.json`, annotate, and send feedback.
 The terminal shows one notice, and the reviewer's words appear in the transcript
 as a `[plannotator]` user message — which is what the model then answers.
+
+Symptom to recognise: a turn that fails with `Insufficient Balance` or `no
+adapter registered for provider "<route>"` right after the notice means the
+profile in use cannot reach the model its settings name. It is a profile
+composition fault, not a review fault: the reviewer's words did arrive.
 
 ## License
 
