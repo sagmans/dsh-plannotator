@@ -1,0 +1,49 @@
+# Continuous integration for the plugin bundle.
+#
+# The gate mirrors `pnpm run check` so a local pass and a CI pass mean the same
+# thing. It runs on the harness version the plugin targets, because a bundle is
+# only useful when the loader can mount it.
+name: check
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The pack smoke test inspects the archive, not the history.
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm run typecheck
+      - name: Test
+        run: pnpm test
+      - name: Build
+        run: pnpm run build
+      - name: Test the built artefact
+        run: pnpm run test:build
+      - name: Pack smoke test
+        run: pnpm run pack-smoke
+      - name: Dependency audit
+        # A plugin that ships no runtime dependencies still resolves the harness
+        # through pnpm, and a known advisory in that graph must fail the build.
+        run: pnpm audit --audit-level high --prod
+        continue-on-error: false

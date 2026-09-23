@@ -1,0 +1,26 @@
+# dsh-plannotator — browser review surfaces for the terminal profile.
+#
+# The row is self-inserting so `dsh plugin --profile tui add` is the whole
+# install: the loader composes this patch as one bundle layer, and the plugin's
+# package manifest owns the row's identity. Nothing in the base is replaced,
+# because this plugin registers commands only and serves no service of its own.
+#
+# Every value here is a default a reader can override from the profile's own
+# cordis.patch.yml (an id-targeted patch replaces the whole config block, so
+# restate the fields you keep).
+- insert:
+    - id: plannotator
+      name: '@sagmans/dsh-plannotator'
+      config:
+        # Empty means the resolver's own order: $PLANNOTATOR_BIN, then PATH.
+        binary: ''
+        # Empty means $PLANNOTATOR_DATA_DIR, then ~/.plannotator.
+        dataDir: ''
+        # 0 waits as long as the CLI server lives; a browser tab left open is
+        # the human's decision, not a timeout.
+        reviewTimeoutMs: 0
+        tailscale: false
+        steerFeedback: true
+        approveNotes: steer
+        allowUntrustedBinary: false
+        maxInputBytes: 1048576

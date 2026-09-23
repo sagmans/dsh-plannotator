@@ -1,0 +1,20 @@
+# Supply-chain policy for this repository.
+#
+# Quarantine window for registry packages. The harness release line this plugin
+# targets was published inside that window, so it is excluded; everything else
+# must age before pnpm will resolve it.
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@deepseek-ai/dsh-*'
+  - '@deepseek-ai/cordis@4.0.2'
+
+# A dependency's install/build script stays blocked until it is reviewed here.
+allowBuilds:
+  '@deepseek-ai/dsh-subprocess-local': set this to true or false
+  '@google/genai': set this to true or false
+  # tsx transpiles through esbuild.
+  esbuild: true
+  koffi: set this to true or false
+  # The PTY dogfood harness needs node-pty's native addon.
+  node-pty: true
+  protobufjs: set this to true or false
