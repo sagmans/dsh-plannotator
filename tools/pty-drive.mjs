@@ -14,6 +14,7 @@
  *   node tools/pty-drive.mjs --prelude "/plannotator-annotate notes.md" --seconds 90 \
  *     --expect "annotation" --answer "20:enter"
  *   node tools/pty-drive.mjs --profile tui-plannotator-e2e --cwd /tmp/scratch
+ *   node tools/pty-drive.mjs --args "--patch /tmp/route.patch.yml" --prompt "say hi"
  *
  * Expectations are checked against the stripped screen after the run settles, so
  * a report states what the terminal actually showed rather than what the code
@@ -47,6 +48,8 @@ for (let index = 0; index < args.length; index += 1) {
 const prompt = option('prompt', '')
 const cwd = option('cwd', process.cwd())
 const home = option('home', '')
+/** Launcher arguments, so a run can reach a patched composition the profile alone does not describe. */
+const extraArgs = option('args', '').split(' ').filter((argument) => argument !== '')
 const seconds = Number.parseInt(option('seconds', '25'), 10)
 const cols = Number.parseInt(option('cols', '110'), 10)
 const rows = Number.parseInt(option('rows', '34'), 10)
@@ -86,7 +89,7 @@ function ensureSpawnHelper() {
 
 ensureSpawnHelper()
 
-const child = pty.spawn('dsh', ['--profile', profile], {
+const child = pty.spawn('dsh', ['--profile', profile, ...extraArgs], {
   name: 'xterm-256color',
   cols,
   rows,
