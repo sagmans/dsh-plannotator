@@ -55,7 +55,7 @@ const expectExit = Number.parseInt(option('expect-exit', '0'), 10)
 
 /** The chord that submits a line; Enter breaks it, so Ctrl+S is what sends. */
 const SUBMIT = '\u0013'
-const NAMED_KEYS = { enter: '\r', tab: '\t', esc: '\u001b', space: ' ', up: '\u001b[A', down: '\u001b[B' }
+const NAMED_KEYS = { enter: '\r', submit: SUBMIT, tab: '\t', esc: '\u001b', space: ' ', up: '\u001b[A', down: '\u001b[B' }
 /** Timed keystrokes as "seconds:value" pairs, for reaching a state a prompt assumes. */
 const answers = option('answer', '')
   .split(',')
