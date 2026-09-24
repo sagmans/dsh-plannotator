@@ -1,49 +1,61 @@
-# Continuous integration for the plugin bundle.
-#
-# The gate mirrors `pnpm run check` so a local pass and a CI pass mean the same
-# thing. It runs on the harness version the plugin targets, because a bundle is
-# only useful when the loader can mount it.
-name: check
+name: Check
 
 on:
   push:
-    branches: ['**']
+    branches: [main, init]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24.20.0'
+  PNPM_VERSION: '11.21.0'
+  DSH_TELEMETRY_DISABLED: '1'
+
 jobs:
   check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
-          # The pack smoke test inspects the archive, not the history.
-          fetch-depth: 1
-      - uses: pnpm/action-setup@v4
+          persist-credentials: false
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
         with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: Install
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Install pnpm in runner-local directory
+        run: |
+          npm install --prefix "$RUNNER_TEMP/pnpm" --ignore-scripts --no-audit "pnpm@$PNPM_VERSION"
+          echo "$RUNNER_TEMP/pnpm/node_modules/.bin" >> "$GITHUB_PATH"
+      # Harness packages arrive from the registry at the version this plugin
+      # declares, so the checks exercise what an installed profile resolves.
+      - name: Install plugin dependencies
         run: pnpm install --frozen-lockfile
+      # Registry signatures and publish attestations for the whole tree: an
+      # unsigned or tampered dependency fails here, before anything ships.
+      - name: Dependency signatures
+        run: npm audit signatures
       - name: Typecheck
         run: pnpm run typecheck
-      - name: Test
+      - name: Unit tests
         run: pnpm test
       - name: Build
         run: pnpm run build
-      - name: Test the built artefact
+      # The CLI and mount tests run the build output, not the sources.
+      - name: Integration tests
         run: pnpm run test:build
-      - name: Pack smoke test
+      # A regression in the release guards would first surface as an
+      # unrecoverable registry write, so they run on every change.
+      - name: Release helper tests
+        run: pnpm test:release
+      - name: Package smoke
         run: pnpm run pack-smoke
-      - name: Dependency audit
-        # A plugin that ships no runtime dependencies still resolves the harness
-        # through pnpm, and a known advisory in that graph must fail the build.
-        run: pnpm audit --audit-level high --prod
-        continue-on-error: false
+      - name: Audit plugin dependencies
+        run: pnpm audit --audit-level high
