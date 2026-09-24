@@ -34,6 +34,7 @@
   "engines": {
     "node": ">=22.19"
   },
+  "packageManager": "pnpm@11.21.0",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -67,9 +68,10 @@
     "test:build": "node --test \"tests/*.test.mjs\"",
     "pack-smoke": "node tools/pack-smoke.mjs",
     "drive": "node tools/pty-drive.mjs",
-    "check": "pnpm run typecheck && pnpm test && pnpm run build && pnpm run test:build && pnpm run pack-smoke",
+    "test:release": "python3 -m unittest discover -s tests/release -p 'test_*.py'",
+    "check": "pnpm run typecheck && pnpm test && pnpm run build && pnpm run test:build && pnpm test:release && pnpm run pack-smoke",
     "prepack": "pnpm run build",
-    "prepublishOnly": "pnpm run typecheck && pnpm test"
+    "prepublishOnly": "pnpm run typecheck && pnpm test && pnpm test:release"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
