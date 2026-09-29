@@ -55,6 +55,10 @@ jobs:
       # unrecoverable registry write, so they run on every change.
       - name: Release helper tests
         run: pnpm test:release
+      # The manifest and the tree it describes must name the same harness
+      # release; the registry half of this check runs on schedule.
+      - name: Harness matrix
+        run: node tools/harness-matrix.mjs
       - name: Package smoke
         run: pnpm run pack-smoke
       - name: Audit plugin dependencies

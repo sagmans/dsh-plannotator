@@ -10,10 +10,35 @@ Applies to maintainers. Current release owner: repository owner ([`LICENSE`](LIC
 
 1. Candidate lands on `main` through a reviewed PR (squash merge).
 2. `verify` CI green on the exact merged SHA.
-3. Locally on that SHA: `pnpm typecheck`, `pnpm test`, `pnpm run build`, `pnpm run test:build`, `pnpm test:release`, `npm audit signatures`, `pnpm audit --audit-level high`, and `node tools/pack-smoke.mjs`.
-4. Dogfooding: install the packed candidate into a plugin profile whose harness is the supported line (`>=0.1.5-rc.1 <0.1.6`) and drive a real session through the slash commands. Confirm each of `/plannotator-plan`, `/plannotator-review`, `/plannotator-annotate`, and `/plannotator-last` opens the browser surface, that decisions and annotations reach the transcript, and that a missing binary fails with an actionable message rather than a hang. Unit tests do not prove the CLI launches, that the browser page loads, or that steered feedback returns to the agent.
+3. Locally on that SHA: `pnpm typecheck`, `pnpm test`, `pnpm run build`, `pnpm run test:build`, `pnpm test:release`, `node tools/harness-matrix.mjs`, `npm audit signatures`, `pnpm audit --audit-level high`, and `node tools/pack-smoke.mjs`.
+4. Dogfooding: install the packed candidate into a plugin profile whose harness is a verified release of the supported line (`>=0.1.5-rc.1 <0.2.0`, listed in `dsh.compatibility.dshReleases`) and drive a real session through the slash commands. Confirm each of `/plannotator-plan`, `/plannotator-review`, `/plannotator-annotate`, and `/plannotator-last` opens the browser surface, that decisions and annotations reach the transcript, and that a missing binary fails with an actionable message rather than a hang. Unit tests do not prove the CLI launches, that the browser page loads, or that steered feedback returns to the agent.
 5. README accuracy pass: every documented command, profile path, and configuration reference still behaves as written.
 6. A published npm version is immutable. A broken release is forward-fixed, never unpublished (see [Rollback](#rollback)).
+
+## Harness matrix
+
+The plugin borrows its harness packages from the profile instead of shipping
+them, so its peers accept the whole supported line while its sources compile
+against one verified release of it: `dsh.compatibility.dsh` is the range the
+peers accept and `dsh.compatibility.dshReleases` lists the releases that passed
+the gates. A peer or a mounted package either accepts that range or names one
+verified release, because npm resolves a prerelease only through a range
+comparator that names its own `X.Y.Z` tuple: `>=0.1.5-rc.1 <0.2.0` reaches
+`0.1.5-rc.3` and never a `0.1.7` prerelease, so a row that must serve the newer
+line names a verified release, the way the harness's own bundles pin. `verify`
+runs `node tools/harness-matrix.mjs` on every change, which checks that matrix
+offline — the range parses, every verified release lies inside it, every harness
+peer and mounted package accepts the range or names a verified release, every
+aliased install names one, and the harness `devDependencies` name exactly one
+verified release.
+
+That failure is the matrix bump, and it is a release-sized change:
+
+1. Run `node tools/harness-matrix.mjs --check-registry` to read the release the harness now serves as `latest`. [`.github/workflows/harness-matrix.yml`](.github/workflows/harness-matrix.yml) runs the same tool daily and fails when `@deepseek-ai/dsh@latest` is not a verified release.
+2. Add it to `dsh.compatibility.dshReleases`, raise the `@deepseek-ai/dsh-*` `devDependencies` to it, and raise every peer or mounted package that names a release — plus every aliased install — to it as well; anything that still accepts the range stays as it is.
+3. `pnpm install` from a clean tree, then run every gate in [Gates](#gates--all-required-before-tagging). A dependency the new line resolves may sit inside the `minimumReleaseAge` window; add that exact version to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` rather than widening the exclude to the publisher.
+4. Dogfood a real session against the new release before it ships: install the packed candidate into a scratch profile and drive the commands per [README](README.md#development).
+5. Land the bump through a reviewed PR and ship it with the next patch release.
 
 ## Release identity and authority
 
