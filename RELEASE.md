@@ -11,7 +11,7 @@ Applies to maintainers. Current release owner: repository owner ([`LICENSE`](LIC
 1. Candidate lands on `main` through a reviewed PR (squash merge).
 2. `verify` CI green on the exact merged SHA.
 3. Locally on that SHA: `pnpm typecheck`, `pnpm test`, `pnpm run build`, `pnpm run test:build`, `pnpm test:release`, `node tools/harness-matrix.mjs`, `npm audit signatures`, `pnpm audit --audit-level high`, and `node tools/pack-smoke.mjs`.
-4. Dogfooding: install the packed candidate into a plugin profile whose harness is a verified release of the supported line (`>=0.1.5-rc.1 <0.2.0`, listed in `dsh.compatibility.dshReleases`) and drive a real session through the slash commands. Confirm each of `/plannotator-plan`, `/plannotator-review`, `/plannotator-annotate`, and `/plannotator-last` opens the browser surface, that decisions and annotations reach the transcript, and that a missing binary fails with an actionable message rather than a hang. Unit tests do not prove the CLI launches, that the browser page loads, or that steered feedback returns to the agent.
+4. Dogfooding: install the packed candidate into a plugin profile whose harness is a verified release of the supported line (`>=0.1.5-rc.1 <0.3.0`, listed in `dsh.compatibility.dshReleases`) and drive a real session through the slash commands. Confirm each of `/plannotator-plan`, `/plannotator-review`, `/plannotator-annotate`, and `/plannotator-last` opens the browser surface, that decisions and annotations reach the transcript, and that a missing binary fails with an actionable message rather than a hang. Unit tests do not prove the CLI launches, that the browser page loads, or that steered feedback returns to the agent.
 5. README accuracy pass: every documented command, profile path, and configuration reference still behaves as written.
 6. A published npm version is immutable. A broken release is forward-fixed, never unpublished (see [Rollback](#rollback)).
 
@@ -22,10 +22,11 @@ them, so its peers accept the whole supported line while its sources compile
 against one verified release of it: `dsh.compatibility.dsh` is the range the
 peers accept and `dsh.compatibility.dshReleases` lists the releases that passed
 the gates. A peer or a mounted package either accepts that range or names one
-verified release, because npm resolves a prerelease only through a range
-comparator that names its own `X.Y.Z` tuple: `>=0.1.5-rc.1 <0.2.0` reaches
-`0.1.5-rc.3` and never a `0.1.7` prerelease, so a row that must serve the newer
-line names a verified release, the way the harness's own bundles pin. `verify`
+verified release. The harness gates a row with
+`semver.satisfies(runtimeVersion, range, { includePrerelease: true })`, so one
+range spans the 0.1.x and 0.2.x prerelease lines; npm's own resolver does not
+include a prerelease unless a comparator names its `X.Y.Z` tuple, so a peer
+naming one prerelease would sit unmet and nest a second framework copy. `verify`
 runs `node tools/harness-matrix.mjs` on every change, which checks that matrix
 offline — the range parses, every verified release lies inside it, every harness
 peer and mounted package accepts the range or names a verified release, every

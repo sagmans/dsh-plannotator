@@ -7,7 +7,7 @@ policy is `RELEASE.md` and is authoritative over anything here.
 
 ## Runtime boundary
 
-- Supported harness line: `>=0.1.5-rc.1 <0.2.0`, profile `tui` only (`package.json` `dsh.compatibility`). The verified releases are `0.1.5-rc.2`, `0.1.5-rc.3`, and `0.1.7-rc.2`; the harness `devDependencies` compile against one of them, and `node tools/harness-matrix.mjs` guards that pair.
+- Supported harness line: `>=0.1.5-rc.1 <0.3.0`, profile `tui` only (`package.json` `dsh.compatibility`). The verified releases are `0.1.5-rc.2`, `0.1.5-rc.3`, `0.1.7-rc.2`, and `0.2.0-rc.2`; the harness `devDependencies` compile against one of them, and `node tools/harness-matrix.mjs` guards that pair.
 - Zero runtime dependencies. Harness packages are peers supplied by the profile; `.npmrc` sets `strict-peer-dependencies=true` and `auto-install-peers=true`, so a stray dependency fails the install instead of resolving from a transitive copy.
 - Node >=22.19 (`engines`); CI runs Node 24.20.0 with pnpm 11.21.0.
 - The bundle registers commands only. `cordis.patch.yml` inserts a self-inserting row and replaces nothing in the base, so a profile without this plugin behaves exactly as before.
@@ -49,7 +49,7 @@ A change is not done until `pnpm run check` passes. CI (`.github/workflows/check
 - Read a verdict from the CLI's exit code and JSON record, never from the wording of a message.
 - `src` imports use `.ts` extensions (`tsconfig.json` `allowImportingTsExtensions`); `tsconfig.build.json` rewrites them for `dist/`. Omitting the extension breaks one target or the other.
 - `tsconfig.json` sets `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`. Keep them enabled; `tests/build.test.mjs` asserts the built exports and schema, so build-affecting changes need it to pass.
-- **The harness matrix names releases, and ranges only what a range can reach.** `dsh.compatibility.dsh` is the range the peers accept and `dsh.compatibility.dshReleases` names the releases that passed the gates. A peer or a mounted package either accepts that range or names one verified release, because npm resolves a prerelease only through a comparator naming its own `X.Y.Z` tuple: `>=0.1.5-rc.1 <0.2.0` reaches `0.1.5-rc.3` and never a `0.1.7` prerelease, and a range written for one prerelease line therefore cannot span two. Moving either side alone is what leaves a profile resolving this bundle's own copy of a harness module beside the host's; [RELEASE.md](RELEASE.md#harness-matrix) owns the bump.
+- **The harness matrix names releases, and ranges only what a range can reach.** `dsh.compatibility.dsh` is the range the peers accept and `dsh.compatibility.dshReleases` names the releases that passed the gates. A peer or a mounted package either accepts that range or names one verified release: the harness gates a row with `semver.satisfies(…, { includePrerelease: true })`, so one range spans the 0.1.x and 0.2.x lines, while npm's own resolver would treat a peer naming one prerelease tuple as unmet and nest a second framework copy. Moving either side alone is what leaves a profile resolving this bundle's own copy of a harness module beside the host's; [RELEASE.md](RELEASE.md#harness-matrix) owns the bump.
 - Comments and docstrings state why the code exists and how it is used, never what the line does.
 
 ## Security boundaries

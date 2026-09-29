@@ -8,15 +8,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- The plugin now serves the whole `>=0.1.5-rc.1 <0.2.0` harness range. The
-  former `<0.1.6` ceiling left a profile on a newer launcher resolving a harness
-  copy of its own beside the host's, which is the shape that broke other bundles'
-  npm installs.
-- `0.1.5-rc.2`, `0.1.5-rc.3`, and `0.1.7-rc.2` are the verified releases: each
-  one passed the gates from a clean resolution and is listed in
-  `dsh.compatibility.dshReleases`. `node tools/harness-matrix.mjs` guards that
-  list against the declared range, the peers, and the release the sources compile
-  against, and CI runs it on every change.
+- The plugin now serves the whole `>=0.1.5-rc.1 <0.3.0` harness range. The
+  former `<0.2.0` ceiling excluded the 0.2.0 line, and the harness disables a row
+  whose range does not admit its own version, so a profile on `0.2.0-rc.2` would
+  have dropped this bundle's commands without a browser ever opening.
+- `0.2.0-rc.2` joins `0.1.5-rc.2`, `0.1.5-rc.3`, and `0.1.7-rc.2` in
+  `dsh.compatibility.dshReleases`: every pinned harness package resolves at that
+  version, the gates pass against it, and a session driven from the packed
+  tarball on the `0.2.0-rc.2` launcher mounts this row with no disable notice.
+  The clone's terminal surface did not start — the sibling bundles that supply it
+  still name `<0.1.6` peers — so no model reply was observed on this line yet.
+  `node tools/harness-matrix.mjs` guards the list against the declared range, the
+  peers, and the release the sources compile against, and CI runs it on every
+  change.
 
 ## [0.1.0] - 2026-09-22
 

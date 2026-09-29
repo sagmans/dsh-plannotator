@@ -6,12 +6,13 @@
  * compatible line, and its sources compile against one verified release of it.
  * A tree where the declared range, the verified list, and that release disagree
  * is how a profile ends up resolving this bundle's own copy of a harness module
- * beside the host's. A peer or a mounted package can only accept the whole line
- * when a single comparator reaches it, and npm admits a prerelease only through
- * a comparator naming that exact `X.Y.Z` tuple: `>=0.1.5-rc.1 <0.2.0` resolves
- * `0.1.5-rc.3` and never a `0.1.7` prerelease, so a row that must serve the
- * newer line names one verified release instead, the way the harness's own
- * bundles pin.
+ * beside the host's. The range must reach a prerelease the harness gates rows
+ * with: `semver.satisfies(runtimeVersion, range, { includePrerelease: true })`,
+ * which is what lets one `>=0.1.5-rc.1 <0.3.0` range span the 0.1.x and 0.2.x
+ * lines. npm's own resolver does not include prereleases by default, so a peer
+ * naming one prerelease tuple resolves a second, older framework copy onto the
+ * consumer's tree; the range is the open side of that trade, and the verified
+ * list is the closed one: a row that must pin names a release from it instead.
  *
  * The default mode checks the matrix offline. --check-registry also reads the
  * release the registry serves as latest, so a harness that moves past the
@@ -75,8 +76,8 @@ if (range !== null) {
 const isHarnessPackage = (name) => name.startsWith('@deepseek-ai/dsh-')
 
 // A row either accepts the whole compatible line or names one verified release.
-// The range is the one the 0.1.5 line resolves; a row that serves the newer line
-// cannot use it, so it names the release this tree is verified against instead.
+// Accepting the range is what lets a profile satisfy the peer from its own
+// harness copy; naming a release nests this bundle's copy of it instead.
 for (const field of ['dependencies', 'peerDependencies']) {
   for (const [name, declared] of Object.entries(manifest[field] ?? {})) {
     if (!isHarnessPackage(name)) continue

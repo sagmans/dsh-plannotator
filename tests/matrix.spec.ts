@@ -22,8 +22,8 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
 const GUARD = join(ROOT, 'tools', 'harness-matrix.mjs')
 
 /** The line this bundle serves, and the releases that passed its gates. */
-const RANGE = '>=0.1.5-rc.1 <0.2.0'
-const VERIFIED_RELEASES = ['0.1.5-rc.2', '0.1.5-rc.3', '0.1.7-rc.2']
+const RANGE = '>=0.1.5-rc.1 <0.3.0'
+const VERIFIED_RELEASES = ['0.1.5-rc.2', '0.1.5-rc.3', '0.1.7-rc.2', '0.2.0-rc.2']
 
 /** Fields a case may vary; every other rule keeps the shape the repository uses. */
 interface ManifestChanges {
@@ -46,7 +46,7 @@ function manifestFor(changes: ManifestChanges): Record<string, unknown> {
     },
     dependencies: changes.dependencies ?? {},
     peerDependencies: changes.peers ?? { '@deepseek-ai/dsh-agent': RANGE },
-    devDependencies: changes.devDependencies ?? { '@deepseek-ai/dsh-agent': '0.1.7-rc.2' },
+    devDependencies: changes.devDependencies ?? { '@deepseek-ai/dsh-agent': '0.2.0-rc.2' },
   }
 }
 
@@ -76,13 +76,14 @@ test('the manifest the repository ships satisfies every matrix rule', () => {
   }
   const reported = execFileSync(process.execPath, [GUARD], { encoding: 'utf8' })
   const compiled = manifest.devDependencies['@deepseek-ai/dsh-agent'] as string
-  assert.match(reported, /harness-matrix: ok \(3 verified, compiled /u)
+  assert.match(reported, /harness-matrix: ok \(4 verified, compiled /u)
   assert.match(reported, new RegExp('compiled ' + compiled.replaceAll('.', '\\.') + '\\)', 'u'))
 })
 
 test('a verified release outside the compatible range is refused', () => {
   const reported = problemsFor({ range: '>=0.1.5-rc.1 <0.1.6' })
-  assert.equal(reported.length, 2)
+  // Both releases of the newer lines lie outside this narrowed range.
+  assert.equal(reported.length, 3)
   assert.match(reported.join('\n'), /verified release 0\.1\.7-rc\.2 lies outside the compatible range/u)
 })
 
