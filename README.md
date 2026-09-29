@@ -26,7 +26,9 @@ still works exactly as before.
 
 ## Requirements
 
-- DeepSeek Harness `0.1.5-rc.1` or newer, `0.1.6` or older.
+- DeepSeek Harness `0.1.5-rc.1` or newer, `0.3.0` or older. The releases
+  driven against a real profile are `0.1.5-rc.2`, `0.1.5-rc.3`, `0.1.7-rc.2`, and
+  `0.2.0-rc.2`; `package.json` `dsh.compatibility.dshReleases` lists them.
 - The `plannotator` CLI on `PATH`, or pointed at by configuration. Install it
   the way its own documentation describes; this plugin never downloads it.
 - A browser on the machine that runs the CLI. For a remote host, either forward

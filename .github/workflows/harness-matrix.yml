@@ -1,0 +1,29 @@
+name: harness-matrix
+
+# The matrix is checked offline in verify; this run is the registry half. A
+# harness release that moves past dsh.compatibility.dshReleases fails here on
+# schedule, so the bump RELEASE.md owns happens before a release needs it.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24.20.0'
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Harness release drift
+        run: node tools/harness-matrix.mjs --check-registry

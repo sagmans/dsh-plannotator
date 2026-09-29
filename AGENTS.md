@@ -7,7 +7,7 @@ policy is `RELEASE.md` and is authoritative over anything here.
 
 ## Runtime boundary
 
-- Supported harness line: `>=0.1.5-rc.1 <0.1.6`, profile `tui` only (`package.json` `dsh.compatibility`).
+- Supported harness line: `>=0.1.5-rc.1 <0.3.0`, profile `tui` only (`package.json` `dsh.compatibility`). The verified releases are `0.1.5-rc.2`, `0.1.5-rc.3`, `0.1.7-rc.2`, and `0.2.0-rc.2`; the harness `devDependencies` compile against one of them, and `node tools/harness-matrix.mjs` guards that pair.
 - Zero runtime dependencies. Harness packages are peers supplied by the profile; `.npmrc` sets `strict-peer-dependencies=true` and `auto-install-peers=true`, so a stray dependency fails the install instead of resolving from a transitive copy.
 - Node >=22.19 (`engines`); CI runs Node 24.20.0 with pnpm 11.21.0.
 - The bundle registers commands only. `cordis.patch.yml` inserts a self-inserting row and replaces nothing in the base, so a profile without this plugin behaves exactly as before.
@@ -22,6 +22,7 @@ policy is `RELEASE.md` and is authoritative over anything here.
 | Integration tests (import `dist/`; run `pnpm run build` first) | `pnpm run test:build` |
 | Release-helper guards (python3 3.11+) | `pnpm test:release` |
 | Packed-tarball smoke | `pnpm run pack-smoke` |
+| Harness matrix guard | `node tools/harness-matrix.mjs` (add `--check-registry` to read the registry's `latest`) |
 | Full local gate | `pnpm run check` |
 | Drive the real TUI in a PTY | `pnpm run drive -- --prelude "/plannotator-last" --expect "no assistant message"` |
 
@@ -39,7 +40,7 @@ A change is not done until `pnpm run check` passes. CI (`.github/workflows/check
 - `src/workspace.ts` — write review input to a private path outside the repository.
 - `src/config.ts`, `src/constants.ts` — row config, defaults, and the values several modules must agree on.
 - `tests/*.spec.ts` run against `src`; `tests/build.test.mjs` loads `dist/`; `tests/release/` exercises `scripts/npm/release.py`; `tests/fixtures/fake-plannotator.mjs` stands in for the CLI.
-- `tools/pack-smoke.mjs` inspects the packed archive; `tools/pty-drive.mjs` boots a profile in a real PTY and asserts on the notice a reader sees.
+- `tools/pack-smoke.mjs` inspects the packed archive; `tools/pty-drive.mjs` boots a profile in a real PTY and asserts on the notice a reader sees; `tools/harness-matrix.mjs` checks the declared harness range against the verified releases, the peers, and the release the sources compile against.
 
 ## Repository constraints
 
@@ -48,6 +49,7 @@ A change is not done until `pnpm run check` passes. CI (`.github/workflows/check
 - Read a verdict from the CLI's exit code and JSON record, never from the wording of a message.
 - `src` imports use `.ts` extensions (`tsconfig.json` `allowImportingTsExtensions`); `tsconfig.build.json` rewrites them for `dist/`. Omitting the extension breaks one target or the other.
 - `tsconfig.json` sets `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`. Keep them enabled; `tests/build.test.mjs` asserts the built exports and schema, so build-affecting changes need it to pass.
+- **The harness matrix names releases, and ranges only what a range can reach.** `dsh.compatibility.dsh` is the range the peers accept and `dsh.compatibility.dshReleases` names the releases that passed the gates. A peer or a mounted package either accepts that range or names one verified release: the harness gates a row with `semver.satisfies(…, { includePrerelease: true })`, so one range spans the 0.1.x and 0.2.x lines, while npm's own resolver would treat a peer naming one prerelease tuple as unmet and nest a second framework copy. Moving either side alone is what leaves a profile resolving this bundle's own copy of a harness module beside the host's; [RELEASE.md](RELEASE.md#harness-matrix) owns the bump.
 - Comments and docstrings state why the code exists and how it is used, never what the line does.
 
 ## Security boundaries

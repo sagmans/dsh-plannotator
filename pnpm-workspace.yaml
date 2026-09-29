@@ -7,6 +7,11 @@ minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-*'
   - '@deepseek-ai/cordis@4.0.2'
+  # The 0.1.7 harness line resolves these two, and both shipped inside the
+  # window with it; this plugin compiles against that line, so the wait cannot
+  # be taken either.
+  - '@deepseek-ai/cosmokit@1.8.5'
+  - '@deepseek-ai/schemastery@3.18.4'
 
 # A dependency's install/build script stays blocked until it is reviewed here.
 allowBuilds:
