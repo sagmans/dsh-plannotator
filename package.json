@@ -1,6 +1,6 @@
 {
   "name": "@sagmans/dsh-plannotator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Plannotator browser review surfaces for the DeepSeek Harness terminal profile: plan review, code review, file annotation, and last-answer annotation, driven on demand from slash commands.",
   "keywords": [
     "deepseek-harness",
