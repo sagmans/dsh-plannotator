@@ -1,25 +1,19 @@
 # Supply-chain policy for this repository.
-#
-# Quarantine window for registry packages. The harness release line this plugin
-# targets was published inside that window, so it is excluded; everything else
-# must age before pnpm will resolve it.
+# Newly resolved releases stay out for their first week (minutes), with no
+# exceptions.
 minimumReleaseAge: 10080
-minimumReleaseAgeExclude:
-  - '@deepseek-ai/dsh-*'
-  - '@deepseek-ai/cordis@4.0.2'
-  # The 0.1.7 harness line resolves these two, and both shipped inside the
-  # window with it; this plugin compiles against that line, so the wait cannot
-  # be taken either.
-  - '@deepseek-ai/cosmokit@1.8.5'
-  - '@deepseek-ai/schemastery@3.18.4'
 
-# A dependency's install/build script stays blocked until it is reviewed here.
+# Only reviewed packages may run install or build scripts: exact names, no
+# globs. Any package with a build script that is not listed fails the install
+# (strictDepBuilds) instead of being skipped silently.
 allowBuilds:
-  '@deepseek-ai/dsh-subprocess-local': set this to true or false
-  '@google/genai': set this to true or false
-  # tsx transpiles through esbuild.
-  esbuild: true
-  koffi: set this to true or false
-  # The PTY dogfood harness needs node-pty's native addon.
+  # The PTY dogfood harness needs node-pty's native addon (node-pty is pinned
+  # to an exact version in package.json).
   node-pty: true
-  protobufjs: set this to true or false
+  # Reviewed and denied: the tests do not need their install scripts.
+  '@deepseek-ai/dsh-subprocess-local': false
+  '@google/genai': false
+  esbuild: false
+  koffi: false
+  protobufjs: false
+strictDepBuilds: true
