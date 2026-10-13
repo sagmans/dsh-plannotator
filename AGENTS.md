@@ -26,7 +26,7 @@ policy is `RELEASE.md` and is authoritative over anything here.
 | Full local gate | `pnpm run check` |
 | Drive the real TUI in a PTY | `pnpm run drive -- --prelude "/plannotator-last" --expect "no assistant message"` |
 
-A change is not done until `pnpm run check` passes. CI (`.github/workflows/check.yml`) runs that same sequence plus `npm audit signatures` and `pnpm audit --audit-level high`; a failing audit is a build failure, not a follow-up.
+A change is not done until `pnpm run check` passes. The tracked `pre-push` hook (`.githooks/`) runs that same sequence plus `npm audit signatures` and `pnpm audit --audit-level high`; a failing audit is a build failure, not a follow-up.
 
 ## Layout
 
@@ -102,3 +102,7 @@ If a tag or signature is missing or invalid, stop and ask the maintainer; do not
 invent a source commit from current `main`. Forward-fix broken packages as
 `RELEASE.md` directs. Helper mutations require `CONFIRM=<action>`; preview
 with `DRY_RUN=1`.
+
+## Git hooks
+
+Checks run in `.githooks/`, not in push/PR CI. Run `sh scripts/setup-hooks.sh` once per clone; never bypass hooks with `--no-verify`. `pre-push`: `npm audit signatures`, `pnpm run check`, `pnpm audit --audit-level high`.
