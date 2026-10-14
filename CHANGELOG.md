@@ -6,6 +6,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Compatibility
+
+- Support Node.js 22, 24 and 26: `engines.node` is now `>=22.19.0`, and typecheck plus tests pass on Node 22.19.0, 24.21.0 and 26.11.1. Development types move to `@types/node` 26.6.4.
+
 ### Changed
 
 - Agent guidance now requires signed version tags, matching GitHub releases,
