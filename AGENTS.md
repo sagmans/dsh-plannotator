@@ -7,7 +7,7 @@ policy is `RELEASE.md` and is authoritative over anything here.
 
 ## Runtime boundary
 
-- Supported harness line: `>=0.1.5-rc.1 <0.3.0`, profile `tui` only (`package.json` `dsh.compatibility`). The verified releases are `0.1.5-rc.2`, `0.1.5-rc.3`, `0.1.7-rc.2`, and `0.2.0-rc.2`; the harness `devDependencies` compile against one of them, and `node tools/harness-matrix.mjs` guards that pair.
+- Supported harness line: `0.1.5-rc.1` up to `0.3.0-0`, spelled as one `>=lower <upper-0` alternative per line so npm and the harness gate read it alike, profile `tui` only (`package.json` `dsh.compatibility`, the single source; [RELEASE.md](RELEASE.md) explains the shape). The verified releases are `0.1.5-rc.2`, `0.1.5-rc.3`, `0.1.7-rc.2`, and `0.2.0-rc.2`; the harness `devDependencies` compile against one of them, and `node tools/harness-matrix.mjs` guards that pair.
 - Zero runtime dependencies. Harness packages are peers supplied by the profile; `.npmrc` sets `strict-peer-dependencies=true` and `auto-install-peers=true`, so a stray dependency fails the install instead of resolving from a transitive copy.
 - Node >=22.19 (`engines`); CI runs Node 24.20.0 with pnpm 11.21.0.
 - The bundle registers commands only. `cordis.patch.yml` inserts a self-inserting row and replaces nothing in the base, so a profile without this plugin behaves exactly as before.

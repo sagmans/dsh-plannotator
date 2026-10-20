@@ -6,13 +6,17 @@
  * compatible line, and its sources compile against one verified release of it.
  * A tree where the declared range, the verified list, and that release disagree
  * is how a profile ends up resolving this bundle's own copy of a harness module
- * beside the host's. The range must reach a prerelease the harness gates rows
- * with: `semver.satisfies(runtimeVersion, range, { includePrerelease: true })`,
- * which is what lets one `>=0.1.5-rc.1 <0.3.0` range span the 0.1.x and 0.2.x
- * lines. npm's own resolver does not include prereleases by default, so a peer
- * naming one prerelease tuple resolves a second, older framework copy onto the
- * consumer's tree; the range is the open side of that trade, and the verified
- * list is the closed one: a row that must pin names a release from it instead.
+ * beside the host's.
+ *
+ * The range is read twice, because two readers apply it. The harness gates
+ * rows with `semver.satisfies(runtimeVersion, range, { includePrerelease: true })`,
+ * which admits prereleases anywhere inside the range, so every upper bound ends
+ * at `-0` to keep the next line's release candidates out. npm's own resolver
+ * admits a prerelease only through a comparator naming its own `X.Y.Z` tuple,
+ * so one span across lines resolves a second, older framework copy onto a
+ * prerelease host's tree; each line therefore gets a `>=lower <upper-0`
+ * alternative of its own, joined by `||`. A verified release has to pass both
+ * readers, and a row that must pin names a release from the verified list.
  *
  * The default mode checks the matrix offline. --check-registry also reads the
  * release the registry serves as latest, so a harness that moves past the
@@ -25,6 +29,102 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
+
+/** X.Y.Z with optional dot-separated prerelease identifiers, as semver spells them. */
+const VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/u
+
+/** The one spelling a compatible-range alternative takes: an inclusive lower and an exclusive upper bound. */
+const RANGE_ALTERNATIVE_PATTERN = /^>=(\S+) <(\S+)$/u
+
+/** The separator semver reads between the alternatives of one range. */
+const ALTERNATIVE_SEPARATOR = '||'
+
+/**
+ * The prerelease an upper bound carries so it also refuses the bound's own
+ * prereleases: `<0.3.0` admits `0.3.0-rc.1` wherever prereleases are read,
+ * `<0.3.0-0` does not, because `0` is the lowest prerelease semver orders.
+ */
+const LOWEST_PRERELEASE = '0'
+
+/**
+ * One version split into its release tuple and prerelease identifiers.
+ * @throws Error when the value is not a plain semver version.
+ */
+function parseVersion(value) {
+  const match = VERSION_PATTERN.exec(value ?? '')
+  if (match === null) throw new Error('unsupported version: ' + String(value))
+  return {
+    numbers: [Number(match[1]), Number(match[2]), Number(match[3])],
+    prerelease: match[4] === undefined ? [] : match[4].split('.').map((part) => /^\d+$/u.test(part) ? Number(part) : part),
+  }
+}
+
+/** Orders two prerelease identifiers: numeric before alphanumeric, each by its own kind. */
+function compareIdentifiers(left, right) {
+  if (typeof left === 'number' && typeof right === 'number') return left - right
+  if (typeof left === 'number') return -1
+  if (typeof right === 'number') return 1
+  return left === right ? 0 : left < right ? -1 : 1
+}
+
+/** Orders two parsed versions with semver's rule that a prerelease precedes its release. */
+function compareParsed(a, b) {
+  for (let index = 0; index < a.numbers.length; index += 1) {
+    if (a.numbers[index] !== b.numbers[index]) return a.numbers[index] - b.numbers[index]
+  }
+  if (a.prerelease.length === 0) return b.prerelease.length === 0 ? 0 : 1
+  if (b.prerelease.length === 0) return -1
+  for (let index = 0; index < Math.max(a.prerelease.length, b.prerelease.length); index += 1) {
+    // A shorter identifier list that matches so far is the earlier prerelease.
+    if (a.prerelease[index] === undefined) return -1
+    if (b.prerelease[index] === undefined) return 1
+    const order = compareIdentifiers(a.prerelease[index], b.prerelease[index])
+    if (order !== 0) return order
+  }
+  return 0
+}
+
+/** Whether two parsed versions share one X.Y.Z tuple. */
+function sameTuple(a, b) {
+  return a.numbers.every((number, index) => number === b.numbers[index])
+}
+
+/**
+ * The compatible range as bounded alternatives, or undefined when any
+ * alternative is not spelled `>=lower <upper` or names an unreadable version.
+ */
+function parseRange(declared) {
+  const alternatives = []
+  for (const part of String(declared ?? '').split(ALTERNATIVE_SEPARATOR)) {
+    const match = RANGE_ALTERNATIVE_PATTERN.exec(part.trim())
+    if (match === null) return undefined
+    try {
+      alternatives.push({ lower: parseVersion(match[1]), upper: parseVersion(match[2]) })
+    } catch {
+      return undefined
+    }
+  }
+  return alternatives
+}
+
+/**
+ * Whether the range admits one version, the way node-semver's `satisfies`
+ * answers it: with `includePrerelease`, as the harness gate reads it, any
+ * version inside an alternative; without it, as npm's peer resolution reads it,
+ * a prerelease only when a bound of that alternative names its own tuple.
+ */
+function satisfiesRange(alternatives, version, includePrerelease) {
+  const parsed = parseVersion(version)
+  return alternatives.some(({ lower, upper }) => compareParsed(parsed, lower) >= 0 && compareParsed(parsed, upper) < 0
+    && (parsed.prerelease.length === 0 || includePrerelease
+      || [lower, upper].some((bound) => bound.prerelease.length > 0 && sameTuple(bound, parsed))))
+}
+
+/** Spells a parsed version back the way the manifest writes it. */
+function formatVersion(version) {
+  return version.numbers.join('.') + (version.prerelease.length === 0 ? '' : '-' + version.prerelease.join('.'))
+}
+
 const argv = process.argv.slice(2)
 /** A spec drives fixture manifests through these rules; every run defaults to this checkout. */
 const manifestAt = argv.indexOf('--manifest')
@@ -36,38 +136,32 @@ const compatibility = manifest.dsh?.compatibility?.dsh
 const releases = Object.keys(manifest.dsh?.compatibility?.dshReleases ?? {})
 const problems = []
 
-/** Orders X.Y.Z[-tag.N] with semver's rule that a prerelease precedes its release. */
-function compareVersions(left, right) {
-  const parse = (value) => {
-    const match = /^(\d+)\.(\d+)\.(\d+)(?:-([a-z]+)\.(\d+))?$/u.exec(value ?? '')
-    if (match === null) throw new Error('unsupported version: ' + String(value))
-    return {
-      numbers: [Number(match[1]), Number(match[2]), Number(match[3])],
-      prerelease: match[4] === undefined ? null : [match[4], Number(match[5])],
+const alternatives = parseRange(compatibility)
+if (alternatives === undefined) {
+  problems.push('dsh.compatibility.dsh must declare ">=lower <upper" alternatives joined by "||", found ' + String(compatibility))
+} else {
+  // A bare upper bound admits the next line's release candidates to the
+  // harness gate, which then mounts the plugin on a line no gate has seen.
+  for (const { upper } of alternatives) {
+    if (upper.prerelease.length !== 1 || upper.prerelease[0] !== Number(LOWEST_PRERELEASE)) {
+      problems.push('dsh.compatibility.dsh bounds a line at <' + formatVersion(upper)
+        + ', which the harness gate reads as admitting that line\'s prereleases; bound it at <'
+        + upper.numbers.join('.') + '-' + LOWEST_PRERELEASE)
     }
   }
-  const a = parse(left)
-  const b = parse(right)
-  for (let index = 0; index < a.numbers.length; index += 1) {
-    if (a.numbers[index] !== b.numbers[index]) return a.numbers[index] - b.numbers[index]
-  }
-  if (a.prerelease === null) return b.prerelease === null ? 0 : 1
-  if (b.prerelease === null) return -1
-  if (a.prerelease[0] !== b.prerelease[0]) return a.prerelease[0] < b.prerelease[0] ? -1 : 1
-  return a.prerelease[1] - b.prerelease[1]
-}
-
-const range = /^>=(\S+) <(\S+)$/u.exec(compatibility ?? '')
-if (range === null) {
-  problems.push('dsh.compatibility.dsh must declare a ">=lower <upper" range, found ' + String(compatibility))
 }
 if (releases.length === 0) {
   problems.push('dsh.compatibility.dshReleases must name at least one verified release')
 }
-if (range !== null) {
+if (alternatives !== undefined) {
   for (const release of releases) {
-    if (compareVersions(release, range[1]) < 0 || compareVersions(release, range[2]) >= 0) {
+    if (!satisfiesRange(alternatives, release, true)) {
       problems.push('verified release ' + release + ' lies outside the compatible range ' + compatibility)
+    } else if (!satisfiesRange(alternatives, release, false)) {
+      // npm reads the same range for the peers and would refuse the host's own
+      // release, resolving a second framework copy beside it.
+      problems.push('verified release ' + release + ' is a prerelease npm peer resolution refuses under '
+        + compatibility + '; give its X.Y.Z tuple an alternative of its own')
     }
   }
 }
