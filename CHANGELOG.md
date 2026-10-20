@@ -9,6 +9,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Compatibility
 
 - Support Node.js 22, 24 and 26: `engines.node` is now `>=22.19.0`, and typecheck plus tests pass on Node 22.19.0, 24.21.0 and 26.11.1. Development types move to `@types/node` 26.6.4.
+- The supported harness line keeps its span, from `0.1.5-rc.1` up to `0.3.0`, but is now spelled as one alternative per line, each bounded at `-0`. npm refused the `0.1.7` and `0.2.0` prerelease hosts under the single `>=0.1.5-rc.1 <0.3.0` span and nested a second framework copy. The harness gate also read that bare `<0.3.0` as admitting `0.3.0` release candidates. The matrix guard now rejects a range either reader would misread.
+- Verified against DeepSeek Harness `0.2.1-rc.2`. The harness `devDependencies` compile against it, with cordis `4.0.5` and schemastery `3.18.5`; `pnpm-workspace.yaml` exempts exactly those releases from the release-age window.
+- The matrix spec reads the shipped range and verified releases from `package.json` alone, so a harness bump no longer edits a second copy of them.
+- The cordis and schemastery peers stop below their next minor: `>=4.0.2 <4.1.0-0` and `>=3.18.2 <3.19.0-0`. The caret ranges also admitted `4.1` and `3.19`, which no verified harness ships.
 
 ### Changed
 
