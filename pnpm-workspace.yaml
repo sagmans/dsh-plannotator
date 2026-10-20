@@ -6,7 +6,10 @@
 # once nothing resolves it.
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
-  # Harness 0.2.1-rc.2 and the framework releases it pins.
+  # Harness 0.2.1-rc.2 and the framework releases it pins. pnpm verifies each
+  # lockfile entry against the window even on a frozen install, so the list is
+  # needed until these mature. Remove it after 2026-10-24 08:22 UTC, when the
+  # youngest entry (published 2026-10-17 08:21 UTC) leaves the window.
   - '@deepseek-ai/cordis@4.0.5'
   - '@deepseek-ai/cosmokit@1.8.6'
   - '@deepseek-ai/schemastery@3.18.5'
