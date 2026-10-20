@@ -184,4 +184,4 @@ This repository's checks:
 - `pre-commit`: staged whitespace and conflict-marker check.
 - `pre-push`: `npm audit signatures`, `pnpm run check`, `pnpm audit --audit-level high`.
 
-A pushed change to `pnpm-workspace.yaml`'s build policy, or a lockfile change to a package allowed to build (`node-pty`), fails `pre-push` until a commit in the push carries a `Build-Review: policy` or `Build-Review: node-pty@<version>` trailer, added after a human review.
+A pushed change to `pnpm-workspace.yaml`'s build policy, or a lockfile change to a package allowed to build (`node-pty`), makes `pre-push` print a warning that names each change. The push continues. List those changes in the PR description: the PR reviewer must review them before approving the merge. Commits carry no trailer other than `Signed-off-by`.
