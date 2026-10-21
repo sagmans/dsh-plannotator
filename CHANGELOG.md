@@ -16,6 +16,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Development tooling moves to TypeScript `7.0.2`, `@types/node` `26.6.5` and tsx `4.23.15`. The emitted `dist/` and declarations are unchanged apart from quote style.
 - Agent guidance now requires signed version tags, matching GitHub releases,
   publication approval, and npm readback so published versions keep a complete
   source and release record without accidental republication.
