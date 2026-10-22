@@ -146,9 +146,8 @@ if TOOL == "gh":
             state["environment"] = {
                 "can_admins_bypass": payload["can_admins_bypass"],
                 "deployment_branch_policy": payload["deployment_branch_policy"],
-                "protection_rules": [{"type": "required_reviewers", "reviewers": [
-                    {"type": "User", "reviewer": {"id": 42, "login": "example"}}
-                ]}],
+                # GitHub reports the tag-only deployment policy as a rule of its own.
+                "protection_rules": [{"type": "branch_policy"}],
             }
         elif endpoint == policies_endpoint:
             if SCENARIO == "policy-error":
@@ -168,7 +167,12 @@ if TOOL == "gh":
         if SCENARIO == "branch-policy":
             output({"can_admins_bypass": False,
                     "deployment_branch_policy": {"protected_branches": False, "custom_branch_policies": True},
-                    "protection_rules": [{"type": "required_reviewers", "reviewers": [
+                    "protection_rules": [{"type": "branch_policy"}]})
+        if SCENARIO == "reviewer-gate":
+            # A reviewer gate adds an approval the documented tag-push policy does not have.
+            output({"can_admins_bypass": False,
+                    "deployment_branch_policy": {"protected_branches": False, "custom_branch_policies": True},
+                    "protection_rules": [{"type": "branch_policy"}, {"type": "required_reviewers", "reviewers": [
                         {"type": "User", "reviewer": {"id": 42}}
                     ]}]})
         if "environment" in state:
