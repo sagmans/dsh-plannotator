@@ -57,7 +57,7 @@ A change is not done until `pnpm run check` passes. The tracked `pre-push` hook 
 - The `plannotator` binary is user-installed and never downloaded by this plugin. `src/binary.ts` checks every candidate for executability and ownership before returning it; `allowUntrustedBinary` defaults to `false`.
 - Snapshot files are written outside the repository with mode `0600` in a `0700` directory.
 - `/plannotator-last` pipes the message on stdin; the message must never be written to disk.
-- No token, credential, or registry secret belongs in this repository. Publication runs only through the tag-triggered `.github/workflows/release.yml` with OIDC trusted publishing and the approval-gated `npm-release` environment.
+- No token, credential, or registry secret belongs in this repository. Publication runs only through the tag-triggered `.github/workflows/release.yml` with OIDC trusted publishing and the tag-only `npm-release` environment. The environment has no reviewer: the admin-only `v*` tag ruleset makes the signed tag push the release approval.
 - `scripts/npm/release.py` actions are previewed with `DRY_RUN=1` and mutate only with `CONFIRM=<action>`. Read `RELEASE.md` before any registry or GitHub mutation; a published version is immutable and forward-fixed.
 - Never publish, unpublish, or configure trust on your own initiative.
 
@@ -81,8 +81,9 @@ and each remote release action; never publish on your own initiative.
    Verify it with `git verify-tag "vX.Y.Z"`. Never use a lightweight or unsigned
    release tag; require GitHub to verify the signature after the approved push.
 3. Push only that tag with `git push origin "vX.Y.Z"` after approval.
-   `.github/workflows/release.yml` verifies the tag and publishes through npm
-   OIDC trusted publishing after the `npm-release` environment approval.
+   The push is the publication approval: `.github/workflows/release.yml`
+   verifies the tag and publishes through npm OIDC trusted publishing with no
+   further approval step.
    Wait for success; never substitute a local `npm publish`. The documented
    first-publication bootstrap is a maintainer-only exception, not a retry path.
 4. After publication succeeds, create the GitHub release from the existing tag:
