@@ -19,6 +19,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Agent guidance now requires signed version tags, matching GitHub releases,
   publication approval, and npm readback so published versions keep a complete
   source and release record without accidental republication.
+- An admin's signed `v*` tag push now publishes automatically. The `npm-release`
+  environment no longer waits for a maintainer approval, because the admin-only
+  tag ruleset already makes the tag push the release decision.
 - Development tooling moves to `@types/node` 26.6.5 and `tsx` 4.23.15. The published package is unchanged.
 - Development builds use TypeScript 7.0.2. The published modules behave the same; the compiler now writes rewritten relative import paths and string literal types in declarations with single quotes.
 
