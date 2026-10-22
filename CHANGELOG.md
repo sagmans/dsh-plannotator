@@ -20,6 +20,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   publication approval, and npm readback so published versions keep a complete
   source and release record without accidental republication.
 - Development tooling moves to `@types/node` 26.6.5 and `tsx` 4.23.15. The published package is unchanged.
+- Development builds use TypeScript 7.0.2. The published modules behave the same; the compiler now writes rewritten relative import paths and string literal types in declarations with single quotes.
 
 ## [0.2.0] - 2026-09-30
 
