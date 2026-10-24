@@ -41,3 +41,10 @@ allowBuilds:
   koffi: false
   protobufjs: false
 strictDepBuilds: true
+
+# Security floors for transitive dependencies the harness pulls in. Each entry
+# only matches the vulnerable range, so a harness release that already ships the
+# fix resolves untouched and the entry can be dropped then.
+#   GHSA-mrhx-c7xc-m3w5  zod (the harness pins 4.4.3 exactly)
+overrides:
+  'zod@>=4.0.0 <4.6.6': ^4.6.7
