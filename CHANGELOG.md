@@ -25,6 +25,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Development tooling moves to `@types/node` 26.6.5 and `tsx` 4.23.15. The published package is unchanged.
 - Development builds use TypeScript 7.0.2. The published modules behave the same; the compiler now writes rewritten relative import paths and string literal types in declarations with single quotes.
 
+### Security
+
+- Development installs resolve `zod` `4.6.7` through a scoped `pnpm-workspace.yaml` override, clearing GHSA-mrhx-c7xc-m3w5 (oversized constrained collections exhaust memory during validation). The harness pins `zod` `4.4.3` exactly, so the override moves it up a minor within the same major. The published package is unchanged.
+
 ## [0.2.0] - 2026-09-30
 
 ### Added
