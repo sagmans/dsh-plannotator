@@ -12,7 +12,9 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: '24.20.0'
+  # An exact patch keeps the daily run reproducible; move it with each Node 24
+  # security release so the job never runs a patched-out runtime.
+  NODE_VERSION: '24.22.1'
 
 jobs:
   check:

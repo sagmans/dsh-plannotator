@@ -28,6 +28,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Security
 
 - Development installs resolve `zod` `4.6.7` through a scoped `pnpm-workspace.yaml` override, clearing GHSA-mrhx-c7xc-m3w5 (oversized constrained collections exhaust memory during validation). The harness pins `zod` `4.4.3` exactly, so the override moves it up a minor within the same major. The published package is unchanged.
+- The daily harness-matrix job runs on Node.js `24.22.1` (was `24.20.0`), and both release jobs pin `24.22.1` instead of the runner's floating `24`. `24.22.1` is the 24.x security release that fixes CVE-2026-111497 (Brotli decoder out-of-bounds write) and CVE-2026-105483 and CVE-2026-106069 (TLS hostname check bypass). An exact pin means the release can no longer verify or publish on an unpatched cached runtime. Checks and tests pass on `24.22.1`. The published package is unchanged.
 
 ## [0.2.0] - 2026-09-30
 
