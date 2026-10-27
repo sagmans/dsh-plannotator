@@ -5,27 +5,6 @@
 # (RELEASE.md). Each entry names one version, never a publisher, and is dropped
 # once nothing resolves it.
 minimumReleaseAge: 10080
-minimumReleaseAgeExclude:
-  # Harness 0.2.1-rc.2 and the framework releases it pins. pnpm verifies each
-  # lockfile entry against the window even on a frozen install, so the list is
-  # needed until these mature. Remove it after 2026-10-24 08:22 UTC, when the
-  # youngest entry (published 2026-10-17 08:21 UTC) leaves the window.
-  - '@deepseek-ai/cordis@4.0.5'
-  - '@deepseek-ai/cosmokit@1.8.6'
-  - '@deepseek-ai/schemastery@3.18.5'
-  - '@deepseek-ai/dsh-agent@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-attachment@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-brand@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-commands@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-llm@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-scope@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-session@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-session-projection@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-system-prompt@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-timeout@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-typert-protocol@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-util-crypto@0.2.1-rc.2'
-  - '@deepseek-ai/dsh-util-values@0.2.1-rc.2'
 
 # Only reviewed packages may run install or build scripts: exact names, no
 # globs. Any package with a build script that is not listed fails the install
