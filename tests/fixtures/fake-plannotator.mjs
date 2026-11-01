@@ -34,7 +34,9 @@ if (!process.stdin.isTTY) {
 }
 
 if (record !== undefined && record !== '') {
-  writeFileSync(record, JSON.stringify({ argv, subcommand, stdin, cwd: process.cwd() }), { mode: 0o600 })
+  writeFileSync(record, JSON.stringify({ argv, subcommand, stdin, cwd: process.cwd() }), {
+    mode: 0o600,
+  })
 }
 
 if (Number.isFinite(delay) && delay > 0) {
@@ -45,8 +47,13 @@ if (mode === 'hang') {
   // Never settles: the runner must cancel it, not wait it out.
   setInterval(() => {}, 1000)
 } else if (subcommand === 'review') {
-  const decision = mode === 'annotate' || mode === 'fail' ? 'annotated' : mode === 'dismiss' ? 'dismissed' : 'approved'
-  process.stdout.write(JSON.stringify({ decision, message: feedback }) + '\n')
+  const decision =
+    mode === 'annotate' || mode === 'fail'
+      ? 'annotated'
+      : mode === 'dismiss'
+        ? 'dismissed'
+        : 'approved'
+  process.stdout.write(`${JSON.stringify({ decision, message: feedback })}\n`)
   process.exit(0)
 } else if (subcommand === 'annotate-last') {
   if (mode === 'badjson') {
@@ -54,7 +61,7 @@ if (mode === 'hang') {
     process.exit(0)
   }
   const decision = mode === 'annotate' ? 'annotated' : mode === 'dismiss' ? 'dismissed' : 'approved'
-  process.stdout.write(JSON.stringify({ decision, feedback }) + '\n')
+  process.stdout.write(`${JSON.stringify({ decision, feedback })}\n`)
   process.exit(0)
 } else {
   if (mode === 'badjson') {
@@ -66,6 +73,6 @@ if (mode === 'hang') {
     process.exit(2)
   }
   const decision = mode === 'annotate' ? 'annotated' : mode === 'dismiss' ? 'dismissed' : 'approved'
-  process.stdout.write(JSON.stringify({ decision, feedback }) + '\n')
+  process.stdout.write(`${JSON.stringify({ decision, feedback })}\n`)
   process.exit(decision === 'approved' ? 0 : 1)
 }

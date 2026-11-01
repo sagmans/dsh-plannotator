@@ -10,9 +10,9 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import {
   planSnapshotPath,
+  type SnapshotIo,
   sessionSegment,
   writePlanSnapshot,
-  type SnapshotIo,
 } from '../src/workspace.ts'
 
 test('a session id cannot escape the plans directory', () => {
@@ -26,7 +26,10 @@ test('a session id cannot escape the plans directory', () => {
 
 test('one session always reviews at one path', () => {
   assert.equal(planSnapshotPath('/data/dsh/plans', 'abc'), join('/data/dsh/plans', 'abc.md'))
-  assert.equal(planSnapshotPath('/data/dsh/plans', 'abc'), planSnapshotPath('/data/dsh/plans', 'abc'))
+  assert.equal(
+    planSnapshotPath('/data/dsh/plans', 'abc'),
+    planSnapshotPath('/data/dsh/plans', 'abc'),
+  )
 })
 
 test('the snapshot is written privately and atomically', () => {
@@ -61,10 +64,10 @@ test('a second plan for the same session replaces the first', () => {
 test('a failed rename leaves a failure, never a half-written plan', () => {
   const calls: string[] = []
   const io: SnapshotIo = {
-    mkdir: (path) => calls.push('mkdir ' + path),
-    writeFile: (path) => calls.push('write ' + path),
+    mkdir: (path) => calls.push(`mkdir ${path}`),
+    writeFile: (path) => calls.push(`write ${path}`),
     rename: (from) => {
-      calls.push('rename ' + from)
+      calls.push(`rename ${from}`)
       throw new Error('EXDEV')
     },
   }

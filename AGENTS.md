@@ -16,6 +16,7 @@ policy is `RELEASE.md` and is authoritative over anything here.
 
 | Purpose | Command |
 | --- | --- |
+| Lint and format check (Biome) | `pnpm run lint` (`pnpm run lint:fix` repairs) |
 | Typecheck | `pnpm run typecheck` |
 | Unit tests (run against `src` via tsx) | `pnpm test` |
 | Build `dist/` | `pnpm run build` |
@@ -106,5 +107,5 @@ with `DRY_RUN=1`.
 
 ## Git hooks
 
-Checks run in `.githooks/`, not in push/PR CI. Run `scripts/setup-hooks` after cloning. All checks must pass before you push. Never use `--no-verify`. `pre-push`: `npm audit signatures`, `pnpm run check`, `pnpm audit --audit-level high`.
+Checks run in `.githooks/`, not in push/PR CI. Run `scripts/setup-hooks` after cloning. All checks must pass before you push. Never use `--no-verify`. `pre-commit`: Biome on the staged files (`pnpm run lint:fix` repairs most findings). `pre-push`: `npm audit signatures`, `pnpm run check`, `pnpm audit --audit-level high`.
 `pre-push` also warns, without blocking, when a push changes the build policy in `pnpm-workspace.yaml` or the lockfile entry of a package allowed to build. List each warned item in the PR description so the reviewer reviews it before approving the merge. Never add a commit trailer other than `Signed-off-by`.

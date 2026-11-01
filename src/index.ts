@@ -16,16 +16,24 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
-import {
-  defaultCommandDeps,
-  registerPlannotatorCommands,
-} from './commands.ts'
+import { defaultCommandDeps, registerPlannotatorCommands } from './commands.ts'
 import { Config as configSchema, normalizeConfig } from './config.ts'
 import { PLUGIN_NAME } from './constants.ts'
 
-export { Config as configSchema, normalizeConfig, resolveDataDir, resolvePlansDir } from './config.ts'
 export type { ApproveNotesMode, PlannotatorConfig } from './config.ts'
-export { COMMAND_ANNOTATE, COMMAND_LAST, COMMAND_PLAN, COMMAND_REVIEW, PLUGIN_NAME } from './constants.ts'
+export {
+  Config as configSchema,
+  normalizeConfig,
+  resolveDataDir,
+  resolvePlansDir,
+} from './config.ts'
+export {
+  COMMAND_ANNOTATE,
+  COMMAND_LAST,
+  COMMAND_PLAN,
+  COMMAND_REVIEW,
+  PLUGIN_NAME,
+} from './constants.ts'
 
 /** Stable Loader identity; the profile patch row's id and the module name agree. */
 export const name = PLUGIN_NAME
@@ -54,6 +62,6 @@ export function apply(ctx: Context, config: unknown): void {
   const deps = defaultCommandDeps(settings, process.env)
   ctx.effect(
     () => registerPlannotatorCommands(ctx, { ...deps, snapshotIo: undefined }),
-    PLUGIN_NAME + ' command lifecycle',
+    `${PLUGIN_NAME} command lifecycle`,
   )
 }

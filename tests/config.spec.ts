@@ -4,14 +4,9 @@
  * @module tests/config.spec
  */
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
 import { join } from 'node:path'
-import {
-  CONFIG_DEFAULTS,
-  normalizeConfig,
-  resolveDataDir,
-  resolvePlansDir,
-} from '../src/config.ts'
+import { test } from 'node:test'
+import { CONFIG_DEFAULTS, normalizeConfig, resolveDataDir, resolvePlansDir } from '../src/config.ts'
 import { DATA_DIR_ENV } from '../src/constants.ts'
 
 test('an absent config resolves to the shipped defaults', () => {
@@ -41,7 +36,10 @@ test('malformed fields fall back instead of reaching a command line', () => {
 
 test('config outranks the environment for the data directory', () => {
   const env = { [DATA_DIR_ENV]: '/env/dir' }
-  assert.equal(resolveDataDir(normalizeConfig({ dataDir: '/config/dir' }), env, '/home/u'), '/config/dir')
+  assert.equal(
+    resolveDataDir(normalizeConfig({ dataDir: '/config/dir' }), env, '/home/u'),
+    '/config/dir',
+  )
   assert.equal(resolveDataDir(normalizeConfig({}), env, '/home/u'), '/env/dir')
   assert.equal(resolveDataDir(normalizeConfig({}), {}, '/home/u'), join('/home/u', '.plannotator'))
 })

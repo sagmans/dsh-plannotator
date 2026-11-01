@@ -16,6 +16,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Development checks lint and format the code with Biome `2.6.3`: the pre-commit hook checks the staged files, and `pnpm run check` checks the whole tree on every push. The code was reformatted once to the existing style. The published modules behave the same.
 - Every release now waits out the one-week release-age window. The temporary exemptions for the 0.2.1-rc.2 harness set and its framework releases are removed, because each entry has aged past the window. The published package is unchanged.
 - Agent guidance now requires signed version tags, matching GitHub releases,
   publication approval, and npm readback so published versions keep a complete

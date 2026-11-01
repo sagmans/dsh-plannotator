@@ -25,7 +25,9 @@ function exited(code: number, stdout: string, stderr = ''): RunResult {
 
 test('the JSON record is read whole, or from its last parseable line', () => {
   assert.deepEqual(readJsonRecord('{"decision":"approved"}'), { decision: 'approved' })
-  assert.deepEqual(readJsonRecord('warning: old server\n{"decision":"dismissed"}\n'), { decision: 'dismissed' })
+  assert.deepEqual(readJsonRecord('warning: old server\n{"decision":"dismissed"}\n'), {
+    decision: 'dismissed',
+  })
   assert.equal(readJsonRecord('no record here'), undefined)
   assert.equal(readJsonRecord(''), undefined)
   assert.equal(readJsonRecord('[1,2]'), undefined)
@@ -36,10 +38,13 @@ test('annotate exit codes are the verdict, with feedback carried through', () =>
     ok: true,
     outcome: { decision: 'approved', feedback: 'ship it' },
   })
-  assert.deepEqual(outcomeFromAnnotate(exited(1, '{"decision":"annotated","feedback":"fix the loop"}')), {
-    ok: true,
-    outcome: { decision: 'annotated', feedback: 'fix the loop' },
-  })
+  assert.deepEqual(
+    outcomeFromAnnotate(exited(1, '{"decision":"annotated","feedback":"fix the loop"}')),
+    {
+      ok: true,
+      outcome: { decision: 'annotated', feedback: 'fix the loop' },
+    },
+  )
   assert.deepEqual(outcomeFromAnnotate(exited(1, '{"decision":"dismissed"}')), {
     ok: true,
     outcome: { decision: 'dismissed', feedback: '' },
@@ -91,25 +96,37 @@ test('a signalled run names the signal', () => {
 })
 
 test('annotate-last trusts the record and refuses to guess without one', () => {
-  assert.deepEqual(outcomeFromAnnotateLast(exited(0, '{"decision":"annotated","feedback":"tighten §2"}')), {
-    ok: true,
-    outcome: { decision: 'annotated', feedback: 'tighten §2' },
-  })
+  assert.deepEqual(
+    outcomeFromAnnotateLast(exited(0, '{"decision":"annotated","feedback":"tighten §2"}')),
+    {
+      ok: true,
+      outcome: { decision: 'annotated', feedback: 'tighten §2' },
+    },
+  )
   const withoutRecord = outcomeFromAnnotateLast(exited(1, ''))
   assert.equal(withoutRecord.ok, false)
   const recordlessSuccess = outcomeFromAnnotateLast(exited(0, ''))
-  assert.deepEqual(recordlessSuccess, { ok: true, outcome: { decision: 'dismissed', feedback: '' } })
+  assert.deepEqual(recordlessSuccess, {
+    ok: true,
+    outcome: { decision: 'dismissed', feedback: '' },
+  })
 })
 
 test('review carries the rendered message and ignores its exit code', () => {
-  assert.deepEqual(outcomeFromReview(exited(0, '{"decision":"approved","message":"The user approved."}')), {
-    ok: true,
-    outcome: { decision: 'approved', feedback: 'The user approved.' },
-  })
-  assert.deepEqual(outcomeFromReview(exited(3, '{"decision":"annotated","message":"change the parser"}')), {
-    ok: true,
-    outcome: { decision: 'annotated', feedback: 'change the parser' },
-  })
+  assert.deepEqual(
+    outcomeFromReview(exited(0, '{"decision":"approved","message":"The user approved."}')),
+    {
+      ok: true,
+      outcome: { decision: 'approved', feedback: 'The user approved.' },
+    },
+  )
+  assert.deepEqual(
+    outcomeFromReview(exited(3, '{"decision":"annotated","message":"change the parser"}')),
+    {
+      ok: true,
+      outcome: { decision: 'annotated', feedback: 'change the parser' },
+    },
+  )
   const missing = outcomeFromReview(exited(0, 'plaintext only'))
   assert.equal(missing.ok, false)
 })

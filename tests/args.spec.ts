@@ -6,23 +6,29 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  ANNOTATE_FLAGS,
   buildAnnotateArgs,
   buildAnnotateLastArgs,
   buildReviewArgs,
   classifyTarget,
   parseTypedLine,
   REVIEW_FLAGS,
-  ANNOTATE_FLAGS,
 } from '../src/args.ts'
 
 const plain = { tailscale: false }
 const tailnet = { tailscale: true }
 
 test('flags with values consume the next token and keep their order', () => {
-  const parsed = parseTypedLine(['--base', 'feature/a', '--no-local', 'https://github.com/o/r/pull/1'], REVIEW_FLAGS)
+  const parsed = parseTypedLine(
+    ['--base', 'feature/a', '--no-local', 'https://github.com/o/r/pull/1'],
+    REVIEW_FLAGS,
+  )
   assert.deepEqual(parsed, {
     ok: true,
-    value: { flags: ['--base', 'feature/a', '--no-local'], positionals: ['https://github.com/o/r/pull/1'] },
+    value: {
+      flags: ['--base', 'feature/a', '--no-local'],
+      positionals: ['https://github.com/o/r/pull/1'],
+    },
   })
 })
 
@@ -57,7 +63,10 @@ test('the strict exit-code contract is only requested for annotate', () => {
 test('tailscale is appended only when in force', () => {
   assert.equal(buildAnnotateArgs('/p.md', tailnet).at(-1), '--tailscale')
   assert.equal(buildAnnotateArgs('/p.md', plain).includes('--tailscale'), false)
-  assert.equal(buildReviewArgs({ flags: [], positionals: [] }, tailnet).includes('--tailscale'), true)
+  assert.equal(
+    buildReviewArgs({ flags: [], positionals: [] }, tailnet).includes('--tailscale'),
+    true,
+  )
 })
 
 test('review argv keeps the reviewer flags and asks for JSON last', () => {

@@ -10,8 +10,8 @@
  * @module dsh-plannotator/feedback
  */
 
-import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { Agent } from '@deepseek-ai/dsh-agent'
+import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import { FEEDBACK_PREFIX, PLUGIN_NAME } from './constants.ts'
 import type { ReviewOutcome } from './decisions.ts'
 
@@ -27,7 +27,7 @@ import type { ReviewOutcome } from './decisions.ts'
  * @returns the message body to steer.
  */
 export function frameFeedback(target: string, body: string): string {
-  return FEEDBACK_PREFIX + ' Reviewer feedback on ' + target + ':\n\n' + body.trim()
+  return `${FEEDBACK_PREFIX} Reviewer feedback on ${target}:\n\n${body.trim()}`
 }
 
 /**

@@ -91,7 +91,10 @@ export interface BuildOptions {
  * @param allowlist - flags this subcommand accepts.
  * @returns the flags and positionals, or usage text naming the first bad token.
  */
-export function parseTypedLine(tokens: readonly string[], allowlist: readonly FlagSpec[]): ParseResult {
+export function parseTypedLine(
+  tokens: readonly string[],
+  allowlist: readonly FlagSpec[],
+): ParseResult {
   const byName = new Map(allowlist.map((spec) => [spec.flag, spec]))
   const flags: string[] = []
   const positionals: string[] = []
@@ -105,12 +108,12 @@ export function parseTypedLine(tokens: readonly string[], allowlist: readonly Fl
     const spec = byName.get(token)
     if (spec === undefined) {
       const accepted = allowlist.map((entry) => entry.flag).join(' ')
-      return { ok: false, error: 'unknown option ' + token + '; accepted: ' + accepted }
+      return { ok: false, error: `unknown option ${token}; accepted: ${accepted}` }
     }
     flags.push(token)
     if (spec.takesValue) {
       const value = tokens[index + 1]
-      if (value === undefined) return { ok: false, error: token + ' requires a value' }
+      if (value === undefined) return { ok: false, error: `${token} requires a value` }
       flags.push(value)
       index += 1
     }
@@ -129,10 +132,7 @@ export function parseTypedLine(tokens: readonly string[], allowlist: readonly Fl
  * @returns argv for `plannotator annotate`.
  */
 export function buildAnnotateArgs(target: string, options: BuildOptions): string[] {
-  return withTailscale(
-    [CLI_ANNOTATE, target, FLAG_GATE, FLAG_JSON, FLAG_REQUIRE_APPROVAL],
-    options,
-  )
+  return withTailscale([CLI_ANNOTATE, target, FLAG_GATE, FLAG_JSON, FLAG_REQUIRE_APPROVAL], options)
 }
 
 /**

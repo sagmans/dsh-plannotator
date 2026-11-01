@@ -11,23 +11,18 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { after, before, test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { NODE_BINARY_PROBE } from '../src/binary.ts'
-import { normalizeConfig, type PlannotatorConfig } from '../src/config.ts'
 import {
-  COMMAND_ANNOTATE,
-  COMMAND_LAST,
-  COMMAND_PLAN,
-  COMMAND_REVIEW,
-} from '../src/constants.ts'
-import {
+  type CommandDeps,
   defaultCommandDeps,
   registerPlannotatorCommands,
-  type CommandDeps,
 } from '../src/commands.ts'
+import { normalizeConfig, type PlannotatorConfig } from '../src/config.ts'
+import { COMMAND_ANNOTATE, COMMAND_LAST, COMMAND_PLAN, COMMAND_REVIEW } from '../src/constants.ts'
 import { agentStub } from './helpers/agent.ts'
-import { stubContext, type RegisteredCommand, type StubContext } from './helpers/context.ts'
+import { type RegisteredCommand, type StubContext, stubContext } from './helpers/context.ts'
 
 const FIXTURE = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'fake-plannotator.mjs')
 // Resolved in `before`: macOS reaches /tmp through a symlink, and a spawned child
@@ -57,7 +52,10 @@ function childEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
   }
 }
 
-function makeDeps(config: Partial<PlannotatorConfig> = {}, extraEnv: Record<string, string> = {}): CommandDeps {
+function makeDeps(
+  config: Partial<PlannotatorConfig> = {},
+  extraEnv: Record<string, string> = {},
+): CommandDeps {
   const base = defaultCommandDeps(
     normalizeConfig({ dataDir: join(scratch, 'data'), binary: FIXTURE, ...config }),
     childEnv(extraEnv),
@@ -71,7 +69,13 @@ function events(plan: string): unknown[] {
       type: 'tool/call',
       seq: 1,
       time: 0,
-      data: { turn: 1, step: 1, callId: 'c1', name: 'exit_plan_mode', arguments: JSON.stringify({ plan }) },
+      data: {
+        turn: 1,
+        step: 1,
+        callId: 'c1',
+        name: 'exit_plan_mode',
+        arguments: JSON.stringify({ plan }),
+      },
     },
   ]
 }
@@ -81,20 +85,27 @@ function message(text: string): unknown[] {
 }
 
 /** Mount the commands and return one of them, failing loudly when it is absent. */
-function mount(deps: CommandDeps): { readonly stub: StubContext; readonly command: (name: string) => RegisteredCommand } {
+function mount(deps: CommandDeps): {
+  readonly stub: StubContext
+  readonly command: (name: string) => RegisteredCommand
+} {
   const stub = stubContext()
   registerPlannotatorCommands(stub.ctx, deps)
   return {
     stub,
     command: (name: string): RegisteredCommand => {
       const found = stub.commands.get(name)
-      assert.ok(found !== undefined, name + ' was not registered')
+      assert.ok(found !== undefined, `${name} was not registered`)
       return found
     },
   }
 }
 
-function record(): { readonly argv: readonly string[]; readonly stdin: string; readonly cwd: string } {
+function record(): {
+  readonly argv: readonly string[]
+  readonly stdin: string
+  readonly cwd: string
+} {
   return JSON.parse(readFileSync(join(scratch, 'record.json'), 'utf8')) as {
     argv: readonly string[]
     stdin: string
@@ -104,12 +115,21 @@ function record(): { readonly argv: readonly string[]; readonly stdin: string; r
 
 test('all four commands register', () => {
   const { stub } = mount(makeDeps())
-  assert.deepEqual([...stub.commands.keys()].sort(), [COMMAND_ANNOTATE, COMMAND_LAST, COMMAND_PLAN, COMMAND_REVIEW])
+  assert.deepEqual([...stub.commands.keys()].sort(), [
+    COMMAND_ANNOTATE,
+    COMMAND_LAST,
+    COMMAND_PLAN,
+    COMMAND_REVIEW,
+  ])
 })
 
 test('an approval reports as success and steers nothing', async () => {
   const { command } = mount(makeDeps({}, { FAKE_MODE: 'approve' }))
-  const { agent, steered } = agentStub({ cwd: CWD, sessionId: SESSION_ID, events: events(PLAN_TEXT) })
+  const { agent, steered } = agentStub({
+    cwd: CWD,
+    sessionId: SESSION_ID,
+    events: events(PLAN_TEXT),
+  })
   const result = await command(COMMAND_PLAN).run({ agent, rawInput: '' })
   assert.deepEqual(result, { kind: 'success', text: 'plan approved' })
   assert.deepEqual(steered, [])
@@ -120,22 +140,22 @@ test('the plan is snapshotted privately and reviewed with the strict gate flags'
   const { agent } = agentStub({ cwd: CWD, sessionId: SESSION_ID, events: events(PLAN_TEXT) })
   await command(COMMAND_PLAN).run({ agent, rawInput: '' })
 
-  const snapshot = join(scratch, 'data', 'dsh', 'plans', SESSION_ID + '.md')
+  const snapshot = join(scratch, 'data', 'dsh', 'plans', `${SESSION_ID}.md`)
   assert.equal(readFileSync(snapshot, 'utf8'), PLAN_TEXT)
   assert.equal(statSync(snapshot).mode & 0o777, 0o600)
-  assert.deepEqual(record().argv, [
-    'annotate',
-    snapshot,
-    '--gate',
-    '--json',
-    '--require-approval',
-  ])
+  assert.deepEqual(record().argv, ['annotate', snapshot, '--gate', '--json', '--require-approval'])
   assert.equal(record().cwd, CWD)
 })
 
 test('annotations are steered as reviewer feedback and noticed', async () => {
-  const { command } = mount(makeDeps({}, { FAKE_MODE: 'annotate', FAKE_FEEDBACK: 'use a queue here' }))
-  const { agent, steered } = agentStub({ cwd: CWD, sessionId: SESSION_ID, events: events(PLAN_TEXT) })
+  const { command } = mount(
+    makeDeps({}, { FAKE_MODE: 'annotate', FAKE_FEEDBACK: 'use a queue here' }),
+  )
+  const { agent, steered } = agentStub({
+    cwd: CWD,
+    sessionId: SESSION_ID,
+    events: events(PLAN_TEXT),
+  })
   const result = await command(COMMAND_PLAN).run({ agent, rawInput: '' })
   assert.deepEqual(result, { kind: 'success', text: 'plan feedback sent to the agent' })
   assert.equal(steered.length, 1)
@@ -144,23 +164,44 @@ test('annotations are steered as reviewer feedback and noticed', async () => {
 })
 
 test('an approval with notes is framed as non-blocking guidance', async () => {
-  const { command } = mount(makeDeps({}, { FAKE_MODE: 'approve', FAKE_FEEDBACK: 'rename the helper' }))
-  const { agent, steered } = agentStub({ cwd: CWD, sessionId: SESSION_ID, events: events(PLAN_TEXT) })
+  const { command } = mount(
+    makeDeps({}, { FAKE_MODE: 'approve', FAKE_FEEDBACK: 'rename the helper' }),
+  )
+  const { agent, steered } = agentStub({
+    cwd: CWD,
+    sessionId: SESSION_ID,
+    events: events(PLAN_TEXT),
+  })
   const result = await command(COMMAND_PLAN).run({ agent, rawInput: '' })
   assert.deepEqual(result, { kind: 'success', text: 'plan approved' })
   assert.match(steered[0] ?? '', /non-blocking implementation notes/u)
 })
 
 test('approveNotes=ignore keeps notes out of the conversation', async () => {
-  const { command } = mount(makeDeps({ approveNotes: 'ignore' }, { FAKE_MODE: 'approve', FAKE_FEEDBACK: 'rename the helper' }))
-  const { agent, steered } = agentStub({ cwd: CWD, sessionId: SESSION_ID, events: events(PLAN_TEXT) })
+  const { command } = mount(
+    makeDeps(
+      { approveNotes: 'ignore' },
+      { FAKE_MODE: 'approve', FAKE_FEEDBACK: 'rename the helper' },
+    ),
+  )
+  const { agent, steered } = agentStub({
+    cwd: CWD,
+    sessionId: SESSION_ID,
+    events: events(PLAN_TEXT),
+  })
   await command(COMMAND_PLAN).run({ agent, rawInput: '' })
   assert.deepEqual(steered, [])
 })
 
 test('steerFeedback=false turns every verdict into a notice only', async () => {
-  const { command } = mount(makeDeps({ steerFeedback: false }, { FAKE_MODE: 'annotate', FAKE_FEEDBACK: 'nope' }))
-  const { agent, steered } = agentStub({ cwd: CWD, sessionId: SESSION_ID, events: events(PLAN_TEXT) })
+  const { command } = mount(
+    makeDeps({ steerFeedback: false }, { FAKE_MODE: 'annotate', FAKE_FEEDBACK: 'nope' }),
+  )
+  const { agent, steered } = agentStub({
+    cwd: CWD,
+    sessionId: SESSION_ID,
+    events: events(PLAN_TEXT),
+  })
   const result = await command(COMMAND_PLAN).run({ agent, rawInput: '' })
   assert.deepEqual(result, { kind: 'success', text: 'plan closed without feedback' })
   assert.deepEqual(steered, [])
@@ -195,7 +236,11 @@ test('a relative path resolves against the session directory, not this process',
 
 test('a gate failure is an error with the CLI diagnostic', async () => {
   const { command } = mount(makeDeps({}, { FAKE_MODE: 'fail' }))
-  const { agent, steered } = agentStub({ cwd: CWD, sessionId: SESSION_ID, events: events(PLAN_TEXT) })
+  const { agent, steered } = agentStub({
+    cwd: CWD,
+    sessionId: SESSION_ID,
+    events: events(PLAN_TEXT),
+  })
   const result = await command(COMMAND_PLAN).run({ agent, rawInput: '' })
   assert.equal(result.kind, 'error')
   if (result.kind === 'error') assert.match(result.text, /could not open the file/u)
@@ -204,7 +249,11 @@ test('a gate failure is an error with the CLI diagnostic', async () => {
 
 test('the last assistant message is piped on stdin, never written to disk', async () => {
   const { command } = mount(makeDeps({}, { FAKE_MODE: 'annotate', FAKE_FEEDBACK: 'shorten it' }))
-  const { agent, steered } = agentStub({ cwd: CWD, sessionId: SESSION_ID, messages: message('a long answer') })
+  const { agent, steered } = agentStub({
+    cwd: CWD,
+    sessionId: SESSION_ID,
+    messages: message('a long answer'),
+  })
   const result = await command(COMMAND_LAST).run({ agent, rawInput: '' })
   assert.deepEqual(result, { kind: 'success', text: 'annotation feedback sent to the agent' })
   assert.deepEqual(record().argv, ['annotate-last', '--stdin', '--gate', '--json'])
@@ -213,7 +262,9 @@ test('the last assistant message is piped on stdin, never written to disk', asyn
 })
 
 test('a review of the worktree asks for JSON and carries the message back', async () => {
-  const { command } = mount(makeDeps({}, { FAKE_MODE: 'annotate', FAKE_FEEDBACK: 'the parser drops empty lines' }))
+  const { command } = mount(
+    makeDeps({}, { FAKE_MODE: 'annotate', FAKE_FEEDBACK: 'the parser drops empty lines' }),
+  )
   const { agent, steered } = agentStub({ cwd: CWD, sessionId: SESSION_ID })
   const result = await command(COMMAND_REVIEW).run({ agent, rawInput: '--base main' })
   assert.deepEqual(result, { kind: 'success', text: 'code review feedback sent to the agent' })
@@ -226,7 +277,10 @@ test('a pull-request URL is the only accepted review operand', async () => {
   const { agent } = agentStub({ cwd: CWD, sessionId: SESSION_ID })
   const refused = await command(COMMAND_REVIEW).run({ agent, rawInput: 'some/file.md' })
   assert.equal(refused.kind, 'error')
-  const accepted = await command(COMMAND_REVIEW).run({ agent, rawInput: 'https://github.com/o/r/pull/1' })
+  const accepted = await command(COMMAND_REVIEW).run({
+    agent,
+    rawInput: 'https://github.com/o/r/pull/1',
+  })
   assert.equal(accepted.kind, 'success')
   assert.equal(record().argv.at(-2), 'https://github.com/o/r/pull/1')
 })
@@ -248,7 +302,11 @@ test('the tailnet flag comes from config, never from the typed line', async () =
 
 test('a missing binary is an error that names the search order', async () => {
   const deps = makeDeps()
-  const { command } = mount({ ...deps, env: { PATH: '/nonexistent' }, config: { ...deps.config, binary: '' } })
+  const { command } = mount({
+    ...deps,
+    env: { PATH: '/nonexistent' },
+    config: { ...deps.config, binary: '' },
+  })
   const { agent } = agentStub({ cwd: CWD, sessionId: SESSION_ID, events: events(PLAN_TEXT) })
   const result = await command(COMMAND_PLAN).run({ agent, rawInput: '' })
   assert.equal(result.kind, 'error')

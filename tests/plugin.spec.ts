@@ -5,8 +5,14 @@
  */
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import {
+  COMMAND_ANNOTATE,
+  COMMAND_LAST,
+  COMMAND_PLAN,
+  COMMAND_REVIEW,
+  PLUGIN_NAME,
+} from '../src/constants.ts'
 import { apply, Config, inject, name } from '../src/index.ts'
-import { COMMAND_ANNOTATE, COMMAND_LAST, COMMAND_PLAN, COMMAND_REVIEW, PLUGIN_NAME } from '../src/constants.ts'
 import { stubContext } from './helpers/context.ts'
 
 test('the bundle declares a Loader identity and the registry it needs', () => {
@@ -18,10 +24,12 @@ test('the bundle declares a Loader identity and the registry it needs', () => {
 test('apply registers every command as an effect of the mounting context', () => {
   const stub = stubContext()
   apply(stub.ctx, {})
-  assert.deepEqual(
-    [...stub.commands.keys()].sort(),
-    [COMMAND_ANNOTATE, COMMAND_LAST, COMMAND_PLAN, COMMAND_REVIEW],
-  )
+  assert.deepEqual([...stub.commands.keys()].sort(), [
+    COMMAND_ANNOTATE,
+    COMMAND_LAST,
+    COMMAND_PLAN,
+    COMMAND_REVIEW,
+  ])
   assert.equal(stub.logs.length, 1)
   // The loader disposes the effect on unload; the registration must go with it.
   for (const dispose of stub.disposers) dispose()

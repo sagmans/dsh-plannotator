@@ -17,6 +17,7 @@
  * @module dsh-plannotator/decisions
  */
 
+import type { RunResult } from './cli.ts'
 import {
   DECISION_ANNOTATED,
   DECISION_APPROVED,
@@ -26,7 +27,6 @@ import {
   EXIT_NOT_APPROVED,
   STDERR_TAIL_CHARS,
 } from './constants.ts'
-import type { RunResult } from './cli.ts'
 
 /** The three verdicts every plannotator surface shares. */
 export type ReviewDecision =
@@ -103,24 +103,27 @@ function stderrTail(result: RunResult): string {
   if (result.kind === 'spawn-failed') return result.message
   const text = result.stderr.text.trim()
   if (text === '') return 'no diagnostic output'
-  return text.length > STDERR_TAIL_CHARS ? '…' + text.slice(-STDERR_TAIL_CHARS) : text
+  return text.length > STDERR_TAIL_CHARS ? `…${text.slice(-STDERR_TAIL_CHARS)}` : text
 }
 
 /** The outcome of a run that never produced a verdict. */
 function failure(result: RunResult, context: string): OutcomeResult {
   if (result.kind === 'spawn-failed') {
-    return { ok: false, error: context + ': ' + result.message }
+    return { ok: false, error: `${context}: ${result.message}` }
   }
   if (result.kind === 'timed-out') {
-    return { ok: false, error: context + ': the review timed out before a decision' }
+    return { ok: false, error: `${context}: the review timed out before a decision` }
   }
   if (result.kind === 'exited' && result.cancelled) {
-    return { ok: false, error: context + ': the review was cancelled' }
+    return { ok: false, error: `${context}: the review was cancelled` }
   }
   if (result.kind === 'signalled') {
-    return { ok: false, error: context + ': the review process was killed (' + String(result.signal) + ')' }
+    return {
+      ok: false,
+      error: `${context}: the review process was killed (${String(result.signal)})`,
+    }
   }
-  return { ok: false, error: context + ': ' + stderrTail(result) }
+  return { ok: false, error: `${context}: ${stderrTail(result)}` }
 }
 
 /**
@@ -130,21 +133,26 @@ function failure(result: RunResult, context: string): OutcomeResult {
  * @returns the reviewer's decision, or why the gate failed.
  */
 export function outcomeFromAnnotate(result: RunResult): OutcomeResult {
-  if (result.kind === 'spawn-failed' || result.kind === 'signalled' || result.kind === 'timed-out') {
+  if (
+    result.kind === 'spawn-failed' ||
+    result.kind === 'signalled' ||
+    result.kind === 'timed-out'
+  ) {
     return failure(result, 'browser review did not finish')
   }
   if (result.cancelled) return failure(result, 'browser review did not finish')
   const record = readJsonRecord(result.stdout.text)
   const feedback = readText(record, 'feedback')
-  if (result.code === EXIT_APPROVED) return { ok: true, outcome: { decision: DECISION_APPROVED, feedback } }
+  if (result.code === EXIT_APPROVED)
+    return { ok: true, outcome: { decision: DECISION_APPROVED, feedback } }
   if (result.code === EXIT_NOT_APPROVED) {
     const decision = readDecision(record) ?? DECISION_ANNOTATED
     return { ok: true, outcome: { decision, feedback } }
   }
   if (result.code === EXIT_GATE_FAILURE) {
-    return { ok: false, error: 'the review could not start: ' + stderrTail(result) }
+    return { ok: false, error: `the review could not start: ${stderrTail(result)}` }
   }
-  return failure(result, 'browser review failed (exit ' + String(result.code) + ')')
+  return failure(result, `browser review failed (exit ${String(result.code)})`)
 }
 
 /**
@@ -169,7 +177,7 @@ export function outcomeFromAnnotateLast(result: RunResult): OutcomeResult {
       // A record-less success is the CLI's plaintext close; nothing was written.
       return { ok: true, outcome: { decision: DECISION_DISMISSED, feedback: '' } }
     }
-    return failure(result, 'annotation did not finish (exit ' + String(result.code) + ')')
+    return failure(result, `annotation did not finish (exit ${String(result.code)})`)
   }
   return { ok: true, outcome: { decision, feedback: readText(record, 'feedback') } }
 }
@@ -192,7 +200,7 @@ export function outcomeFromReview(result: RunResult): OutcomeResult {
   const record = readJsonRecord(result.stdout.text)
   const decision = readDecision(record)
   if (decision === undefined) {
-    return failure(result, 'code review did not finish (exit ' + String(result.code) + ')')
+    return failure(result, `code review did not finish (exit ${String(result.code)})`)
   }
   return { ok: true, outcome: { decision, feedback: readText(record, 'message') } }
 }

@@ -22,32 +22,19 @@ import {
   buildAnnotateLastArgs,
   buildReviewArgs,
   classifyTarget,
+  type ParsedLine,
   parseTypedLine,
   REVIEW_FLAGS,
-  type ParsedLine,
 } from './args.ts'
+import { type BinaryProbe, NODE_BINARY_PROBE, resolveBinary } from './binary.ts'
+import { type RunResult, runPlannotator } from './cli.ts'
+import { type PlannotatorConfig, resolveDataDir, resolvePlansDir } from './config.ts'
+import { COMMAND_ANNOTATE, COMMAND_LAST, COMMAND_PLAN, COMMAND_REVIEW } from './constants.ts'
 import {
-  NODE_BINARY_PROBE,
-  resolveBinary,
-  type BinaryProbe,
-} from './binary.ts'
-import { runPlannotator, type RunResult } from './cli.ts'
-import {
-  resolveDataDir,
-  resolvePlansDir,
-  type PlannotatorConfig,
-} from './config.ts'
-import {
-  COMMAND_ANNOTATE,
-  COMMAND_LAST,
-  COMMAND_PLAN,
-  COMMAND_REVIEW,
-} from './constants.ts'
-import {
+  type OutcomeResult,
   outcomeFromAnnotate,
   outcomeFromAnnotateLast,
   outcomeFromReview,
-  type OutcomeResult,
   type ReviewOutcome,
 } from './decisions.ts'
 import { feedbackFor, steerText } from './feedback.ts'
@@ -88,11 +75,10 @@ function resolveTypedPath(cwd: string, token: string): string {
 /** How a surface's notice reads once the review settled and feedback was routed. */
 function notice(surface: Surface, outcome: ReviewOutcome, steered: boolean): string {
   const approved = outcome.decision === 'approved'
-  const subject =
-    surface === 'plan' ? 'plan' : surface === 'review' ? 'code review' : 'annotation'
-  if (approved) return subject + ' approved'
-  if (steered) return subject + ' feedback sent to the agent'
-  return subject + ' closed without feedback'
+  const subject = surface === 'plan' ? 'plan' : surface === 'review' ? 'code review' : 'annotation'
+  if (approved) return `${subject} approved`
+  if (steered) return `${subject} feedback sent to the agent`
+  return `${subject} closed without feedback`
 }
 
 /** Everything one run needs, after the caller vetted the target. */
@@ -119,7 +105,10 @@ interface RunOptions {
 async function runOne(options: RunOptions): Promise<CommandResult> {
   const { ctx, deps, agent, surface } = options
   if (options.busy.current) {
-    return { kind: 'error', text: 'a plannotator review is already open; finish it before starting another' }
+    return {
+      kind: 'error',
+      text: 'a plannotator review is already open; finish it before starting another',
+    }
   }
   const cwd = sessionCwd(agent)
   const resolution = resolveBinary({
@@ -131,7 +120,7 @@ async function runOne(options: RunOptions): Promise<CommandResult> {
     probe: deps.probe,
   })
   if (!resolution.ok) {
-    return { kind: 'error', text: 'plannotator: ' + resolution.reason }
+    return { kind: 'error', text: `plannotator: ${resolution.reason}` }
   }
 
   // The command's own signal is not enough: unloading the plugin has to stop a
@@ -156,7 +145,7 @@ async function runOne(options: RunOptions): Promise<CommandResult> {
     const mapped = options.map(result)
     if (!mapped.ok) {
       ctx.logger.warn(`${surface} review failed: ${mapped.error}`)
-      return { kind: 'error', text: 'plannotator: ' + mapped.error }
+      return { kind: 'error', text: `plannotator: ${mapped.error}` }
     }
     const message = deps.config.steerFeedback
       ? feedbackFor(mapped.outcome, options.target, deps.config.approveNotes)
@@ -184,9 +173,9 @@ function existingPath(
   want: 'file' | 'entry',
 ): { readonly ok: true; readonly path: string } | { readonly ok: false; readonly error: string } {
   const path = resolveTypedPath(cwd, token)
-  if (!existsSync(path)) return { ok: false, error: path + ' does not exist' }
+  if (!existsSync(path)) return { ok: false, error: `${path} does not exist` }
   const facts = statSync(path)
-  if (want === 'file' && !facts.isFile()) return { ok: false, error: path + ' is not a file' }
+  if (want === 'file' && !facts.isFile()) return { ok: false, error: `${path} is not a file` }
   return { ok: true, path }
 }
 
@@ -217,18 +206,22 @@ export function registerPlannotatorCommands(ctx: Context, deps: CommandDeps): ()
   const definitions: CommandDefinition[] = [
     {
       name: COMMAND_PLAN,
-      description: 'Review the latest plan (or a markdown file) in the browser and return the decision',
+      description:
+        'Review the latest plan (or a markdown file) in the browser and return the decision',
       input: { hint: '[file.md] [--markdown] [--no-jina] [--tailscale]' },
       handler: async (invocation) => {
         const parsed = parseTypedLine(invocation.rawInput.trim().split(/\s+/u), ANNOTATE_FLAGS)
         if (!parsed.ok) return { kind: 'error', text: parsed.error }
         const operand = singleOperand(parsed.value)
-        if (operand === null) return { kind: 'error', text: 'usage: /' + COMMAND_PLAN + ' [file.md]' }
+        if (operand === null) return { kind: 'error', text: `usage: /${COMMAND_PLAN} [file.md]` }
 
         let target: string
         if (operand !== undefined) {
           if (classifyTarget(operand) !== 'path') {
-            return { kind: 'error', text: 'usage: /' + COMMAND_PLAN + ' [file.md] — a URL has no plan to review' }
+            return {
+              kind: 'error',
+              text: `usage: /${COMMAND_PLAN} [file.md] — a URL has no plan to review`,
+            }
           }
           const vetted = existingPath(sessionCwd(invocation.agent), operand, 'file')
           if (!vetted.ok) return { kind: 'error', text: vetted.error }
@@ -238,17 +231,25 @@ export function registerPlannotatorCommands(ctx: Context, deps: CommandDeps): ()
           if (plan === undefined) {
             return {
               kind: 'error',
-              text: 'no plan in this session yet; pass a markdown file: /' + COMMAND_PLAN + ' plan.md',
+              text: `no plan in this session yet; pass a markdown file: /${COMMAND_PLAN} plan.md`,
             }
           }
           if (oversize(plan, deps.config.maxInputBytes)) {
-            return { kind: 'error', text: 'the plan is larger than maxInputBytes; write it to a file and pass the path' }
+            return {
+              kind: 'error',
+              text: 'the plan is larger than maxInputBytes; write it to a file and pass the path',
+            }
           }
           // The snapshot path is what the reviewer's URL and the CLI's plan
           // history both key on, so it is resolved before the run, not after.
-          const written = writePlanSnapshot(plansDir, invocation.agent.session.id, plan, deps.snapshotIo)
+          const written = writePlanSnapshot(
+            plansDir,
+            invocation.agent.session.id,
+            plan,
+            deps.snapshotIo,
+          )
           if (!written.ok) {
-            return { kind: 'error', text: 'could not write the plan snapshot: ' + written.error }
+            return { kind: 'error', text: `could not write the plan snapshot: ${written.error}` }
           }
           target = planSnapshotPath(plansDir, invocation.agent.session.id)
         }
@@ -271,18 +272,23 @@ export function registerPlannotatorCommands(ctx: Context, deps: CommandDeps): ()
     {
       name: COMMAND_REVIEW,
       description: 'Review working-tree changes or a pull request in the browser',
-      input: { hint: '[--git|--gitbutler] [--base <ref>] [--diff-type <type>] [--no-local] [--tailscale] [PR_URL]' },
+      input: {
+        hint: '[--git|--gitbutler] [--base <ref>] [--diff-type <type>] [--no-local] [--tailscale] [PR_URL]',
+      },
       handler: async (invocation) => {
         const parsed = parseTypedLine(invocation.rawInput.trim().split(/\s+/u), REVIEW_FLAGS)
         if (!parsed.ok) return { kind: 'error', text: parsed.error }
         const operand = singleOperand(parsed.value)
         if (operand === null) {
-          return { kind: 'error', text: 'usage: /' + COMMAND_REVIEW + ' [options] [PR_URL]' }
+          return { kind: 'error', text: `usage: /${COMMAND_REVIEW} [options] [PR_URL]` }
         }
         if (operand !== undefined && classifyTarget(operand) !== 'url') {
           return {
             kind: 'error',
-            text: 'usage: /' + COMMAND_REVIEW + ' [options] [PR_URL] — a code review reads the worktree or a PR URL',
+            text:
+              'usage: /' +
+              COMMAND_REVIEW +
+              ' [options] [PR_URL] — a code review reads the worktree or a PR URL',
           }
         }
         const target = operand ?? sessionCwd(invocation.agent)
@@ -310,11 +316,11 @@ export function registerPlannotatorCommands(ctx: Context, deps: CommandDeps): ()
         if (!parsed.ok) return { kind: 'error', text: parsed.error }
         const operand = singleOperand(parsed.value)
         if (operand === undefined || operand === null) {
-          return { kind: 'error', text: 'usage: /' + COMMAND_ANNOTATE + ' <file|folder|URL>' }
+          return { kind: 'error', text: `usage: /${COMMAND_ANNOTATE} <file|folder|URL>` }
         }
         const kind = classifyTarget(operand)
         if (kind === undefined) {
-          return { kind: 'error', text: 'usage: /' + COMMAND_ANNOTATE + ' <file|folder|URL>' }
+          return { kind: 'error', text: `usage: /${COMMAND_ANNOTATE} <file|folder|URL>` }
         }
         let target = operand
         if (kind === 'path') {
@@ -345,14 +351,17 @@ export function registerPlannotatorCommands(ctx: Context, deps: CommandDeps): ()
         const parsed = parseTypedLine(invocation.rawInput.trim().split(/\s+/u), [])
         if (!parsed.ok) return { kind: 'error', text: parsed.error }
         if (parsed.value.positionals.length > 0) {
-          return { kind: 'error', text: 'usage: /' + COMMAND_LAST + ' (no arguments)' }
+          return { kind: 'error', text: `usage: /${COMMAND_LAST} (no arguments)` }
         }
         const text = newestAssistantText(invocation.agent.session.deriveMessages())
         if (text === undefined) {
           return { kind: 'error', text: 'this session has no assistant message to annotate yet' }
         }
         if (oversize(text, deps.config.maxInputBytes)) {
-          return { kind: 'error', text: 'the message is larger than maxInputBytes; annotate a file instead' }
+          return {
+            kind: 'error',
+            text: 'the message is larger than maxInputBytes; annotate a file instead',
+          }
         }
         return runOne({
           ctx,

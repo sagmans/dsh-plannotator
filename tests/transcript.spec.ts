@@ -30,5 +30,8 @@ test('the newest non-empty assistant message wins', () => {
   ]
   assert.equal(newestAssistantText(messages), 'first')
   assert.equal(newestAssistantText([]), undefined)
-  assert.equal(newestAssistantText([{ role: 'user', content: [{ type: 'text', text: 'x' }] }]), undefined)
+  assert.equal(
+    newestAssistantText([{ role: 'user', content: [{ type: 'text', text: 'x' }] }]),
+    undefined,
+  )
 })

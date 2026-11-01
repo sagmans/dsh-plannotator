@@ -8,8 +8,8 @@
  */
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { apply, Config, inject, name } from '../dist/index.js'
 import { COMMAND_ANNOTATE, COMMAND_LAST, COMMAND_PLAN, COMMAND_REVIEW } from '../dist/constants.js'
+import { apply, Config, inject, name } from '../dist/index.js'
 
 /** The smallest context the entry point touches: a registry, a logger, an effect scope. */
 function stubContext() {
@@ -43,10 +43,12 @@ test('the built entry point mounts and registers every command', () => {
   assert.ok(Config !== undefined)
   const stub = stubContext()
   apply(stub.ctx, {})
-  assert.deepEqual(
-    [...stub.commands.keys()].sort(),
-    [COMMAND_ANNOTATE, COMMAND_LAST, COMMAND_PLAN, COMMAND_REVIEW],
-  )
+  assert.deepEqual([...stub.commands.keys()].sort(), [
+    COMMAND_ANNOTATE,
+    COMMAND_LAST,
+    COMMAND_PLAN,
+    COMMAND_REVIEW,
+  ])
   for (const dispose of stub.disposers) dispose()
   assert.equal(stub.commands.size, 0)
 })
@@ -55,8 +57,8 @@ test('every registered command declares a handler and a description', () => {
   const stub = stubContext()
   apply(stub.ctx, {})
   for (const definition of stub.commands.values()) {
-    assert.equal(typeof definition.handler, 'function', definition.name + ' has no handler')
-    assert.equal(typeof definition.description, 'string', definition.name + ' has no description')
+    assert.equal(typeof definition.handler, 'function', `${definition.name} has no handler`)
+    assert.equal(typeof definition.description, 'string', `${definition.name} has no description`)
     assert.ok(definition.description.length > 0)
   }
 })

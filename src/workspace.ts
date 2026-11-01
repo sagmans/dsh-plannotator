@@ -12,11 +12,7 @@
 
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import {
-  SESSION_SEGMENT_MAX_CHARS,
-  SNAPSHOT_DIR_MODE,
-  SNAPSHOT_FILE_MODE,
-} from './constants.ts'
+import { SESSION_SEGMENT_MAX_CHARS, SNAPSHOT_DIR_MODE, SNAPSHOT_FILE_MODE } from './constants.ts'
 
 /** The filesystem calls snapshot writing uses, injectable for tests. */
 export interface SnapshotIo {
@@ -69,7 +65,7 @@ export function sessionSegment(sessionId: string): string {
  * @returns absolute path to the session's plan snapshot.
  */
 export function planSnapshotPath(plansDir: string, sessionId: string): string {
-  return join(plansDir, sessionSegment(sessionId) + '.md')
+  return join(plansDir, `${sessionSegment(sessionId)}.md`)
 }
 
 /**
@@ -94,7 +90,7 @@ export function writePlanSnapshot(
   io: SnapshotIo = NODE_SNAPSHOT_IO,
 ): SnapshotResult {
   const path = planSnapshotPath(plansDir, sessionId)
-  const temporary = path + '.tmp-' + String(process.pid) + '-' + Date.now().toString(36)
+  const temporary = `${path}.tmp-${String(process.pid)}-${Date.now().toString(36)}`
   try {
     io.mkdir(plansDir, { recursive: true, mode: SNAPSHOT_DIR_MODE })
     io.writeFile(temporary, text, { mode: SNAPSHOT_FILE_MODE })

@@ -15,8 +15,8 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
 const GUARD = join(ROOT, 'tools', 'harness-matrix.mjs')
@@ -27,7 +27,8 @@ const GUARD = join(ROOT, 'tools', 'harness-matrix.mjs')
  * this bundle serves, so a harness bump edits the manifest alone and the first
  * case checks whatever it declares.
  */
-const RANGE = '>=0.1.5-rc.1 <0.1.6-0 || >=0.1.6-0 <0.1.7-0 || >=0.1.7-0 <0.2.0-0 || >=0.2.0-0 <0.2.1-0'
+const RANGE =
+  '>=0.1.5-rc.1 <0.1.6-0 || >=0.1.6-0 <0.1.7-0 || >=0.1.7-0 <0.2.0-0 || >=0.2.0-0 <0.2.1-0'
 const VERIFIED_RELEASES = ['0.1.5-rc.2', '0.1.5-rc.3', '0.1.7-rc.2', '0.2.0-rc.2']
 
 /** Fields a case may vary; every other rule keeps the shape the repository uses. */
@@ -46,7 +47,9 @@ function manifestFor(changes: ManifestChanges): Record<string, unknown> {
     dsh: {
       compatibility: {
         dsh: changes.range ?? RANGE,
-        dshReleases: changes.releases ?? Object.fromEntries(VERIFIED_RELEASES.map((release) => [release, 'compatible'])),
+        dshReleases:
+          changes.releases ??
+          Object.fromEntries(VERIFIED_RELEASES.map((release) => [release, 'compatible'])),
       },
     },
     dependencies: changes.dependencies ?? {},
@@ -65,7 +68,9 @@ function problemsFor(changes: ManifestChanges): readonly string[] {
   } catch (error) {
     const failure = error as { readonly status?: number; readonly stderr?: string }
     assert.equal(failure.status, 1, 'the guard exited for a reason other than a rejected matrix')
-    return String(failure.stderr ?? '').split('\n').filter((line) => line.trim().startsWith('-'))
+    return String(failure.stderr ?? '')
+      .split('\n')
+      .filter((line) => line.trim().startsWith('-'))
   }
 }
 
@@ -76,32 +81,50 @@ test('the manifest the repository ships satisfies every matrix rule', () => {
   assert.ok(releases.length > 0, 'the manifest names no verified release')
   // The plugin borrows its harness peers from the profile, so each one accepts
   // the whole line; a pinned peer would nest this bundle's own copy of it.
-  for (const [name, declared] of Object.entries(manifest.peerDependencies as Record<string, string>)) {
+  for (const [name, declared] of Object.entries(
+    manifest.peerDependencies as Record<string, string>,
+  )) {
     if (!name.startsWith('@deepseek-ai/dsh-')) continue
-    assert.equal(declared, range, name + ' does not accept the compatible range')
+    assert.equal(declared, range, `${name} does not accept the compatible range`)
   }
   const reported = execFileSync(process.execPath, [GUARD], { encoding: 'utf8' })
   const compiled = manifest.devDependencies['@deepseek-ai/dsh-agent'] as string
-  assert.match(reported, new RegExp('harness-matrix: ok \\(' + releases.length + ' verified, compiled ', 'u'))
-  assert.match(reported, new RegExp('compiled ' + compiled.replaceAll('.', '\\.') + '\\)', 'u'))
+  assert.match(
+    reported,
+    new RegExp(`harness-matrix: ok \\(${releases.length} verified, compiled `, 'u'),
+  )
+  assert.match(reported, new RegExp(`compiled ${compiled.replaceAll('.', '\\.')}\\)`, 'u'))
 })
 
 test('a verified release outside the compatible range is refused', () => {
   const reported = problemsFor({ range: '>=0.1.5-rc.1 <0.1.6-0' })
   // Both releases of the newer lines lie outside this narrowed range.
   assert.equal(reported.length, 3)
-  assert.match(reported.join('\n'), /verified release 0\.1\.7-rc\.2 lies outside the compatible range/u)
+  assert.match(
+    reported.join('\n'),
+    /verified release 0\.1\.7-rc\.2 lies outside the compatible range/u,
+  )
   // Outside also means outside npm's reading: one span over several lines
   // admits a later line's prerelease only to the harness gate, never to npm.
-  assert.match(problemsFor({ range: '>=0.1.5-rc.1 <0.2.1-0' }).join('\n'),
-    /verified release 0\.1\.7-rc\.2 is a prerelease npm peer resolution refuses/u)
+  assert.match(
+    problemsFor({ range: '>=0.1.5-rc.1 <0.2.1-0' }).join('\n'),
+    /verified release 0\.1\.7-rc\.2 is a prerelease npm peer resolution refuses/u,
+  )
   // A bare upper bound puts the next line's prereleases inside the gate's reading.
-  assert.match(problemsFor({ range: '>=0.1.5-rc.1 <0.1.6-0 || >=0.1.6-0 <0.1.7-0 || >=0.1.7-0 <0.2.0-0 || >=0.2.0-0 <0.2.1' }).join('\n'),
-    /bounds a line at <0\.2\.1, .* bound it at <0\.2\.1-0/u)
+  assert.match(
+    problemsFor({
+      range:
+        '>=0.1.5-rc.1 <0.1.6-0 || >=0.1.6-0 <0.1.7-0 || >=0.1.7-0 <0.2.0-0 || >=0.2.0-0 <0.2.1',
+    }).join('\n'),
+    /bounds a line at <0\.2\.1, .* bound it at <0\.2\.1-0/u,
+  )
 })
 
 test('an empty verified list is refused', () => {
-  assert.match(problemsFor({ releases: {} }).join('\n'), /dshReleases must name at least one verified release/u)
+  assert.match(
+    problemsFor({ releases: {} }).join('\n'),
+    /dshReleases must name at least one verified release/u,
+  )
 })
 
 test('a harness peer accepts the range or names one verified release', () => {
@@ -122,18 +145,27 @@ test('a mounted harness package accepts the range or names one verified release'
 
 test('an aliased install names a verified release', () => {
   assert.deepEqual(
-    problemsFor({ dependencies: { '@sagmans/dsh-agent-017': 'npm:@deepseek-ai/dsh-agent@0.1.7-rc.2' } }),
+    problemsFor({
+      dependencies: { '@sagmans/dsh-agent-017': 'npm:@deepseek-ai/dsh-agent@0.1.7-rc.2' },
+    }),
     [],
   )
   assert.match(
-    problemsFor({ dependencies: { '@sagmans/dsh-agent-017': 'npm:@deepseek-ai/dsh-agent@0.1.7-rc.1' } }).join('\n'),
+    problemsFor({
+      dependencies: { '@sagmans/dsh-agent-017': 'npm:@deepseek-ai/dsh-agent@0.1.7-rc.1' },
+    }).join('\n'),
     /aliased dependency @sagmans\/dsh-agent-017 declares npm:@deepseek-ai\/dsh-agent@0\.1\.7-rc\.1/u,
   )
 })
 
 test('the harness devDependencies name one verified release', () => {
   assert.match(
-    problemsFor({ devDependencies: { '@deepseek-ai/dsh-agent': '0.1.5-rc.3', '@deepseek-ai/dsh-llm': '0.1.7-rc.2' } }).join('\n'),
+    problemsFor({
+      devDependencies: {
+        '@deepseek-ai/dsh-agent': '0.1.5-rc.3',
+        '@deepseek-ai/dsh-llm': '0.1.7-rc.2',
+      },
+    }).join('\n'),
     /the harness devDependencies name 2 versions, not one/u,
   )
   assert.match(

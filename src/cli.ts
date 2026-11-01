@@ -154,14 +154,32 @@ export function runPlannotator(request: RunRequest): Promise<RunResult> {
 
     child.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
       if (cancelled) {
-        finish({ kind: 'exited', code: code ?? -1, cancelled: true, stdout: stdout.snapshot(), stderr: stderr.snapshot() })
+        finish({
+          kind: 'exited',
+          code: code ?? -1,
+          cancelled: true,
+          stdout: stdout.snapshot(),
+          stderr: stderr.snapshot(),
+        })
         return
       }
       if (code === null) {
-        finish({ kind: 'signalled', signal, cancelled: false, stdout: stdout.snapshot(), stderr: stderr.snapshot() })
+        finish({
+          kind: 'signalled',
+          signal,
+          cancelled: false,
+          stdout: stdout.snapshot(),
+          stderr: stderr.snapshot(),
+        })
         return
       }
-      finish({ kind: 'exited', code, cancelled: false, stdout: stdout.snapshot(), stderr: stderr.snapshot() })
+      finish({
+        kind: 'exited',
+        code,
+        cancelled: false,
+        stdout: stdout.snapshot(),
+        stderr: stderr.snapshot(),
+      })
     })
 
     if (request.signal !== undefined) {

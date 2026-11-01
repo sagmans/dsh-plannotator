@@ -10,7 +10,7 @@
  * Usage: node tools/pack-smoke.mjs
  */
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -68,59 +68,85 @@ try {
   const read = (entry) => execFileSync('tar', ['-xOzf', archive, entry], { encoding: 'utf8' })
 
   for (const entry of REQUIRED) {
-    if (!entries.includes(entry)) problems.push('missing from the tarball: ' + entry)
+    if (!entries.includes(entry)) problems.push(`missing from the tarball: ${entry}`)
   }
   for (const entry of entries) {
-    if (FORBIDDEN.some((pattern) => pattern.test(entry))) problems.push('should not ship: ' + entry)
+    if (FORBIDDEN.some((pattern) => pattern.test(entry))) problems.push(`should not ship: ${entry}`)
   }
 
   const packed = JSON.parse(read('package/package.json'))
-  if (packed.private === true) problems.push('the packed manifest is private, so npm would refuse it')
+  if (packed.private === true)
+    problems.push('the packed manifest is private, so npm would refuse it')
   const shipped = (target) =>
-    typeof target === 'string' && entries.includes('package/' + target.replace(/^\.\//u, ''))
+    typeof target === 'string' && entries.includes(`package/${target.replace(/^\.\//u, '')}`)
   const declared = packed.dsh?.bundle?.patch
   if (!shipped(declared)) problems.push('the manifest does not point at a bundle patch that ships')
   const declaredTargets = [
     ['main', packed.main],
     ['types', packed.types],
     ...Object.entries(packed.exports ?? {}).map(([key, value]) => [
-      'exports["' + key + '"]',
+      `exports["${key}"]`,
       typeof value === 'string' ? value : value?.default,
     ]),
   ]
   for (const [label, target] of declaredTargets) {
-    if (target === undefined) problems.push(label + ' is not declared in the packed manifest')
-    else if (!shipped(target)) problems.push(label + ' points at ' + target + ', which is not in the tarball')
+    if (target === undefined) problems.push(`${label} is not declared in the packed manifest`)
+    else if (!shipped(target))
+      problems.push(`${label} points at ${target}, which is not in the tarball`)
   }
 
-  for (const field of ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']) {
+  for (const field of [
+    'dependencies',
+    'devDependencies',
+    'peerDependencies',
+    'optionalDependencies',
+  ]) {
     for (const [name, spec] of Object.entries(packed[field] ?? {})) {
-      if (typeof spec === 'string' && LOCAL_PROTOCOLS.some((protocol) => spec.startsWith(protocol))) {
-        problems.push(field + '.' + name + ' uses ' + spec.split(':')[0] + ':, which a registry install cannot resolve')
+      if (
+        typeof spec === 'string' &&
+        LOCAL_PROTOCOLS.some((protocol) => spec.startsWith(protocol))
+      ) {
+        problems.push(
+          field +
+            '.' +
+            name +
+            ' uses ' +
+            spec.split(':')[0] +
+            ':, which a registry install cannot resolve',
+        )
       }
     }
   }
   const runtime = Object.keys(packed.dependencies ?? {}).length
   if (runtime > ALLOWED_RUNTIME_DEPENDENCIES) {
-    problems.push('the plugin ships ' + runtime + ' runtime dependencies; it promises none')
+    problems.push(`the plugin ships ${runtime} runtime dependencies; it promises none`)
   }
 
   const patch = read('package/cordis.patch.yml')
-  if (!patch.includes(PATCH_ROW)) problems.push('the bundle patch no longer names ' + PATCH_ROW)
-  if (!patch.includes(PATCH_ID)) problems.push('the bundle patch no longer inserts ' + PATCH_ID)
+  if (!patch.includes(PATCH_ROW)) problems.push(`the bundle patch no longer names ${PATCH_ROW}`)
+  if (!patch.includes(PATCH_ID)) problems.push(`the bundle patch no longer inserts ${PATCH_ID}`)
 
   const modules = walk(join(ROOT, 'dist')).filter((file) => file.endsWith('.js'))
-  for (const module of modules) execFileSync(process.execPath, ['--check', module], { stdio: 'inherit' })
+  for (const module of modules)
+    execFileSync(process.execPath, ['--check', module], { stdio: 'inherit' })
   // A declaration file that the tarball omits is worse than no types at all:
   // editors would report the package as untyped while the manifest promises types.
   const declarations = walk(join(ROOT, 'dist')).filter((file) => file.endsWith('.d.ts'))
   for (const declaration of declarations) {
-    const relative = 'package/' + declaration.slice(ROOT.length + 1)
-    if (!entries.includes(relative)) problems.push('missing from the tarball: ' + relative)
+    const relative = `package/${declaration.slice(ROOT.length + 1)}`
+    if (!entries.includes(relative)) problems.push(`missing from the tarball: ${relative}`)
   }
 
-  console.log('\npacked ' + entries.length + ' entries, ' + modules.length + ' modules parse, ' + declarations.length + ' declarations ship')
-  console.log('tarball: ' + archive)
+  console.log(
+    '\npacked ' +
+      entries.length +
+      ' entries, ' +
+      modules.length +
+      ' modules parse, ' +
+      declarations.length +
+      ' declarations ship',
+  )
+  console.log(`tarball: ${archive}`)
 } catch (error) {
   problems.push(error instanceof Error ? error.message : String(error))
 } finally {
@@ -129,7 +155,7 @@ try {
 
 if (problems.length > 0) {
   console.error('\npack-smoke: the artefact is not shippable')
-  for (const problem of problems) console.error('  - ' + problem)
+  for (const problem of problems) console.error(`  - ${problem}`)
   process.exit(1)
 }
 console.log('pack-smoke: ok')

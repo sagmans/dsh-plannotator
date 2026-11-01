@@ -8,7 +8,12 @@ import { test } from 'node:test'
 import { newestPlan, planFromToolCall } from '../src/plan-source.ts'
 
 function call(name: string, args: string): unknown {
-  return { type: 'tool/call', seq: 1, time: 0, data: { turn: 1, step: 1, callId: 'c1', name, arguments: args } }
+  return {
+    type: 'tool/call',
+    seq: 1,
+    time: 0,
+    data: { turn: 1, step: 1, callId: 'c1', name, arguments: args },
+  }
 }
 
 test('a plan call yields its plan text', () => {
@@ -17,7 +22,10 @@ test('a plan call yields its plan text', () => {
 
 test('other tools, other events, and bad JSON are skipped', () => {
   assert.equal(planFromToolCall(call('bash', '{"plan":"nope"}')), undefined)
-  assert.equal(planFromToolCall({ type: 'tool/result', data: { name: 'exit_plan_mode' } }), undefined)
+  assert.equal(
+    planFromToolCall({ type: 'tool/result', data: { name: 'exit_plan_mode' } }),
+    undefined,
+  )
   assert.equal(planFromToolCall(call('exit_plan_mode', 'not json')), undefined)
   assert.equal(planFromToolCall(call('exit_plan_mode', '{"plan":"   "}')), undefined)
   assert.equal(planFromToolCall(undefined), undefined)

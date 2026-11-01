@@ -5,18 +5,20 @@
  */
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { resolveBinary, type BinaryProbe } from '../src/binary.ts'
+import { type BinaryProbe, resolveBinary } from '../src/binary.ts'
 import { BINARY_ENV } from '../src/constants.ts'
 
 const UID = 501
 
 /** A probe over an in-memory filesystem: path -> { mode, uid, executable }. */
-function probe(files: Record<string, { mode?: number; uid?: number; executable?: boolean }>): BinaryProbe {
+function probe(
+  files: Record<string, { mode?: number; uid?: number; executable?: boolean }>,
+): BinaryProbe {
   return {
     isExecutable: (path) => files[path] !== undefined && files[path]?.executable !== false,
     stat: (path) => {
       const entry = files[path]
-      if (entry === undefined) throw new Error('ENOENT ' + path)
+      if (entry === undefined) throw new Error(`ENOENT ${path}`)
       return { mode: entry.mode ?? 0o755, uid: entry.uid ?? UID }
     },
   }
@@ -72,7 +74,11 @@ test('nothing found is reported with the search order', () => {
     probe: probe({}),
   })
   assert.equal(result.ok, false)
-  if (!result.ok) assert.match(result.reason, /^plannotator was not found \(config\.binary, \$PLANNOTATOR_BIN, then PATH\)$/u)
+  if (!result.ok)
+    assert.match(
+      result.reason,
+      /^plannotator was not found \(config\.binary, \$PLANNOTATOR_BIN, then PATH\)$/u,
+    )
 })
 
 test('a world-writable binary is refused, and the override is named', () => {
@@ -91,9 +97,23 @@ test('a world-writable binary is refused, and the override is named', () => {
 
 test('a foreign owner is refused unless the profile allows it', () => {
   const files = { '/opt/plannotator': { uid: UID + 1 } }
-  const refused = resolveBinary({ configured: '/opt/plannotator', allowUntrusted: false, env: {}, cwd: '/work', uid: UID, probe: probe(files) })
+  const refused = resolveBinary({
+    configured: '/opt/plannotator',
+    allowUntrusted: false,
+    env: {},
+    cwd: '/work',
+    uid: UID,
+    probe: probe(files),
+  })
   assert.equal(refused.ok, false)
-  const allowed = resolveBinary({ configured: '/opt/plannotator', allowUntrusted: true, env: {}, cwd: '/work', uid: UID, probe: probe(files) })
+  const allowed = resolveBinary({
+    configured: '/opt/plannotator',
+    allowUntrusted: true,
+    env: {},
+    cwd: '/work',
+    uid: UID,
+    probe: probe(files),
+  })
   assert.deepEqual(allowed, { ok: true, path: '/opt/plannotator' })
 })
 

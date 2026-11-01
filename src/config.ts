@@ -65,7 +65,9 @@ export const Config = z.object({
   reviewTimeoutMs: z.natural().default(CONFIG_DEFAULTS.reviewTimeoutMs),
   tailscale: z.boolean().default(CONFIG_DEFAULTS.tailscale),
   steerFeedback: z.boolean().default(CONFIG_DEFAULTS.steerFeedback),
-  approveNotes: z.union([z.const('steer'), z.const('ignore')]).default(CONFIG_DEFAULTS.approveNotes),
+  approveNotes: z
+    .union([z.const('steer'), z.const('ignore')])
+    .default(CONFIG_DEFAULTS.approveNotes),
   allowUntrustedBinary: z.boolean().default(CONFIG_DEFAULTS.allowUntrustedBinary),
   maxInputBytes: z.natural().default(CONFIG_DEFAULTS.maxInputBytes),
 })

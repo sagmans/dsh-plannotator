@@ -9,8 +9,7 @@
  * @module dsh-plannotator/binary
  */
 
-import { constants as fsConstants, statSync } from 'node:fs'
-import { accessSync } from 'node:fs'
+import { accessSync, constants as fsConstants, statSync } from 'node:fs'
 import { delimiter, isAbsolute, resolve } from 'node:path'
 import { BINARY_ENV } from './constants.ts'
 

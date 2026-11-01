@@ -15,7 +15,9 @@ import type { CommandDefinition, CommandInvocation, CommandResult } from '@deeps
 /** One registered definition, with its handler callable directly. */
 export interface RegisteredCommand {
   readonly definition: CommandDefinition
-  run(invocation: Partial<CommandInvocation> & { readonly rawInput: string }): Promise<CommandResult>
+  run(
+    invocation: Partial<CommandInvocation> & { readonly rawInput: string },
+  ): Promise<CommandResult>
 }
 
 /** The stub registry plus its recorded registrations and log lines. */
