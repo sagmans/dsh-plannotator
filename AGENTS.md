@@ -175,3 +175,8 @@ push changes the build policy in `pnpm-workspace.yaml` or the lockfile entry of
 a package allowed to build. List each warned item in the PR description so the
 reviewer reviews it before approving the merge. Never add a commit trailer other
 than `Signed-off-by`.
+
+Commit messages follow `.githooks/GIT_CONVENTION.md`, which `commit-msg` and
+`pre-push` enforce. The generic checks need gitleaks, osv-scanner, semgrep,
+lizard and markdownlint-cli2, plus actionlint and zizmor when a push changes
+workflow files. A missing tool blocks the hook.
