@@ -1,16 +1,27 @@
 # AGENTS.md
 
 Operating map for the Plannotator browser-review plugin. It adds four slash
-commands to the DeepSeek Harness `tui` profile; the review UI itself lives in the
-user-installed `plannotator` CLI. Human-facing behaviour is `README.md`; release
-policy is `RELEASE.md` and is authoritative over anything here.
+commands to the DeepSeek Harness `tui` profile; the review UI itself lives in
+the user-installed `plannotator` CLI. Human-facing behaviour is `README.md`;
+release policy is `RELEASE.md` and is authoritative over anything here.
 
 ## Runtime boundary
 
-- Supported harness line: `0.1.5-rc.1` up to `0.3.0-0`, spelled as one `>=lower <upper-0` alternative per line so npm and the harness gate read it alike, profile `tui` only (`package.json` `dsh.compatibility`, the single source; [RELEASE.md](RELEASE.md) explains the shape). The verified releases are `0.1.5-rc.2`, `0.1.5-rc.3`, `0.1.7-rc.2`, `0.2.0-rc.2`, `0.2.1-rc.2`, and `0.2.1-rc.3`; the harness `devDependencies` compile against one of them, and `node tools/harness-matrix.mjs` guards that pair.
-- Zero runtime dependencies. Harness packages are peers supplied by the profile; `.npmrc` sets `strict-peer-dependencies=true` and `auto-install-peers=true`, so a stray dependency fails the install instead of resolving from a transitive copy.
+- Supported harness line: `0.1.5-rc.1` up to `0.3.0-0`, spelled as one
+  `>=lower <upper-0` alternative per line so npm and the harness gate read it
+  alike, profile `tui` only (`package.json` `dsh.compatibility`, the single
+  source; [RELEASE.md](RELEASE.md) explains the shape). The verified releases
+  are `0.1.5-rc.2`, `0.1.5-rc.3`, `0.1.7-rc.2`, `0.2.0-rc.2`, `0.2.1-rc.2`, and
+  `0.2.1-rc.3`; the harness `devDependencies` compile against one of them, and
+  `node tools/harness-matrix.mjs` guards that pair.
+- Zero runtime dependencies. Harness packages are peers supplied by the profile;
+  `.npmrc` sets `strict-peer-dependencies=true` and `auto-install-peers=true`,
+  so a stray dependency fails the install instead of resolving from a transitive
+  copy.
 - Node >=22.19 (`engines`); CI runs Node 24.22.1 with pnpm 11.21.0.
-- The bundle registers commands only. `cordis.patch.yml` inserts a self-inserting row and replaces nothing in the base, so a profile without this plugin behaves exactly as before.
+- The bundle registers commands only. `cordis.patch.yml` inserts a
+  self-inserting row and replaces nothing in the base, so a profile without this
+  plugin behaves exactly as before.
 
 ## Commands
 
@@ -27,45 +38,93 @@ policy is `RELEASE.md` and is authoritative over anything here.
 | Full local gate | `pnpm run check` |
 | Drive the real TUI in a PTY | `pnpm run drive -- --prelude "/plannotator-last" --expect "no assistant message"` |
 
-A change is not done until `pnpm run check` passes. The tracked `pre-push` hook (`.githooks/`) runs that same sequence plus `npm audit signatures` and `pnpm audit --audit-level high`; a failing audit is a build failure, not a follow-up.
+A change is not done until `pnpm run check` passes. The tracked `pre-push` hook
+(`.githooks/`) runs that same sequence plus `npm audit signatures` and
+`pnpm audit --audit-level high`; a failing audit is a build failure, not a
+follow-up.
 
 ## Layout
 
-- `src/commands.ts` — the four handlers and the single review runner every surface goes through.
+- `src/commands.ts` — the four handlers and the single review runner every
+  surface goes through.
 - `src/args.ts` — argv construction and the per-subcommand flag allowlist.
 - `src/binary.ts` — resolve and vet the `plannotator` executable.
-- `src/cli.ts` — spawn, bounded capture, cancellation kill ladder, optional timeout.
-- `src/decisions.ts` — exit code plus JSON record to verdict; the only module that knows the CLI's stdout contracts.
+- `src/cli.ts` — spawn, bounded capture, cancellation kill ladder, optional
+  timeout.
+- `src/decisions.ts` — exit code plus JSON record to verdict; the only module
+  that knows the CLI's stdout contracts.
 - `src/feedback.ts` — steer the reviewer's words into the conversation.
-- `src/plan-source.ts`, `src/transcript.ts` — recover the newest plan / newest assistant message from the session log.
-- `src/workspace.ts` — write review input to a private path outside the repository.
-- `src/config.ts`, `src/constants.ts` — row config, defaults, and the values several modules must agree on.
-- `tests/*.spec.ts` run against `src`; `tests/build.test.mjs` loads `dist/`; `tests/release/` exercises `scripts/npm/release.py`; `tests/fixtures/fake-plannotator.mjs` stands in for the CLI.
-- `tools/pack-smoke.mjs` inspects the packed archive; `tools/pty-drive.mjs` boots a profile in a real PTY and asserts on the notice a reader sees; `tools/harness-matrix.mjs` checks the declared harness range against the verified releases, the peers, and the release the sources compile against.
+- `src/plan-source.ts`, `src/transcript.ts` — recover the newest plan / newest
+  assistant message from the session log.
+- `src/workspace.ts` — write review input to a private path outside the
+  repository.
+- `src/config.ts`, `src/constants.ts` — row config, defaults, and the values
+  several modules must agree on.
+- `tests/*.spec.ts` run against `src`; `tests/build.test.mjs` loads `dist/`;
+  `tests/release/` exercises `scripts/npm/release.py`;
+  `tests/fixtures/fake-plannotator.mjs` stands in for the CLI.
+- `tools/pack-smoke.mjs` inspects the packed archive; `tools/pty-drive.mjs`
+  boots a profile in a real PTY and asserts on the notice a reader sees;
+  `tools/harness-matrix.mjs` checks the declared harness range against the
+  verified releases, the peers, and the release the sources compile against.
 
 ## Repository constraints
 
-- Reviewer input never becomes shell syntax: argv is an array spawned with `shell: false`, and the plugin's own flags are appended in `args.ts`. Never route reviewer text through a shell or a command string.
-- The CLI flag surface is allowlisted per subcommand. A new flag is added to the allowlist in `args.ts` and to the owning command in `commands.ts`; unknown dashed tokens are refused with usage text rather than forwarded.
-- Read a verdict from the CLI's exit code and JSON record, never from the wording of a message.
-- `src` imports use `.ts` extensions (`tsconfig.json` `allowImportingTsExtensions`); `tsconfig.build.json` rewrites them for `dist/`. Omitting the extension breaks one target or the other.
-- `tsconfig.json` sets `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`. Keep them enabled; `tests/build.test.mjs` asserts the built exports and schema, so build-affecting changes need it to pass.
-- **The harness matrix names releases, and ranges only what a range can reach.** `dsh.compatibility.dsh` is the range the peers accept and `dsh.compatibility.dshReleases` names the releases that passed the gates. A peer or a mounted package either accepts that range or names one verified release: the harness gates a row with `semver.satisfies(…, { includePrerelease: true })`, so one range spans the 0.1.x and 0.2.x lines, while npm's own resolver would treat a peer naming one prerelease tuple as unmet and nest a second framework copy. Moving either side alone is what leaves a profile resolving this bundle's own copy of a harness module beside the host's; [RELEASE.md](RELEASE.md#harness-matrix) owns the bump.
-- Comments and docstrings state why the code exists and how it is used, never what the line does.
+- Reviewer input never becomes shell syntax: argv is an array spawned with
+  `shell: false`, and the plugin's own flags are appended in `args.ts`. Never
+  route reviewer text through a shell or a command string.
+- The CLI flag surface is allowlisted per subcommand. A new flag is added to the
+  allowlist in `args.ts` and to the owning command in `commands.ts`; unknown
+  dashed tokens are refused with usage text rather than forwarded.
+- Read a verdict from the CLI's exit code and JSON record, never from the
+  wording of a message.
+- `src` imports use `.ts` extensions (`tsconfig.json`
+  `allowImportingTsExtensions`); `tsconfig.build.json` rewrites them for
+  `dist/`. Omitting the extension breaks one target or the other.
+- `tsconfig.json` sets `strict`, `noUncheckedIndexedAccess`,
+  `exactOptionalPropertyTypes`, `verbatimModuleSyntax`. Keep them enabled;
+  `tests/build.test.mjs` asserts the built exports and schema, so
+  build-affecting changes need it to pass.
+- **The harness matrix names releases, and ranges only what a range can reach.**
+  `dsh.compatibility.dsh` is the range the peers accept and
+  `dsh.compatibility.dshReleases` names the releases that passed the gates. A
+  peer or a mounted package either accepts that range or names one verified
+  release: the harness gates a row with
+  `semver.satisfies(…, { includePrerelease: true })`, so one range spans the
+  0.1.x and 0.2.x lines, while npm's own resolver would treat a peer naming one
+  prerelease tuple as unmet and nest a second framework copy. Moving either side
+  alone is what leaves a profile resolving this bundle's own copy of a harness
+  module beside the host's; [RELEASE.md](RELEASE.md#harness-matrix) owns the
+  bump.
+- Comments and docstrings state why the code exists and how it is used, never
+  what the line does.
 
 ## Security boundaries
 
-- The `plannotator` binary is user-installed and never downloaded by this plugin. `src/binary.ts` checks every candidate for executability and ownership before returning it; `allowUntrustedBinary` defaults to `false`.
-- Snapshot files are written outside the repository with mode `0600` in a `0700` directory.
-- `/plannotator-last` pipes the message on stdin; the message must never be written to disk.
-- No token, credential, or registry secret belongs in this repository. Publication runs only through the tag-triggered `.github/workflows/release.yml` with OIDC trusted publishing and the tag-only `npm-release` environment. The environment has no reviewer: the admin-only `v*` tag ruleset makes the signed tag push the release approval.
-- `scripts/npm/release.py` actions are previewed with `DRY_RUN=1` and mutate only with `CONFIRM=<action>`. Read `RELEASE.md` before any registry or GitHub mutation; a published version is immutable and forward-fixed.
+- The `plannotator` binary is user-installed and never downloaded by this
+  plugin. `src/binary.ts` checks every candidate for executability and ownership
+  before returning it; `allowUntrustedBinary` defaults to `false`.
+- Snapshot files are written outside the repository with mode `0600` in a `0700`
+  directory.
+- `/plannotator-last` pipes the message on stdin; the message must never be
+  written to disk.
+- No token, credential, or registry secret belongs in this repository.
+  Publication runs only through the tag-triggered
+  `.github/workflows/release.yml` with OIDC trusted publishing and the tag-only
+  `npm-release` environment. The environment has no reviewer: the admin-only
+  `v*` tag ruleset makes the signed tag push the release approval.
+- `scripts/npm/release.py` actions are previewed with `DRY_RUN=1` and mutate
+  only with `CONFIRM=<action>`. Read `RELEASE.md` before any registry or GitHub
+  mutation; a published version is immutable and forward-fixed.
 - Never publish, unpublish, or configure trust on your own initiative.
 
 ## Testing completion criteria
 
-- Unit tests do not prove the CLI launches, the browser page loads, or steered feedback returns to the agent. For any change that touches a command path, run `pnpm run drive` against a real profile and confirm the notice text.
-- Report exactly which commands ran and which did not; an unrun gate is stated, never implied.
+- Unit tests do not prove the CLI launches, the browser page loads, or steered
+  feedback returns to the agent. For any change that touches a command path, run
+  `pnpm run drive` against a real profile and confirm the notice text.
+- Report exactly which commands ran and which did not; an unrun gate is stated,
+  never implied.
 
 ## Release and publication
 
@@ -89,8 +148,8 @@ and each remote release action; never publish on your own initiative.
    first-publication bootstrap is a maintainer-only exception, not a retry path.
 4. After publication succeeds, create the GitHub release from the existing tag:
    `gh release create "vX.Y.Z" --verify-tag --title "vX.Y.Z" --notes-file <notes-file>`.
-   Use that version's changelog entry as notes. Set `--latest=false` when filling
-   an older release so it does not replace the current latest release.
+   Use that version's changelog entry as notes. Set `--latest=false` when
+   filling an older release so it does not replace the current latest release.
 5. Read back the npm version, tarball integrity and available provenance, the
    remote tag's verified signature and source commit, and the published GitHub
    release for the same version. A green workflow alone is not completion:
@@ -99,13 +158,20 @@ and each remote release action; never publish on your own initiative.
 Published versions and tags are immutable. Never delete, move, or re-sign an
 existing release tag, and never republish or unpublish an existing npm version.
 For a missing GitHub release, verify the existing signed tag and create only its
-release record with `--verify-tag`; do not push another tag or retry publication.
-If a tag or signature is missing or invalid, stop and ask the maintainer; do not
-invent a source commit from current `main`. Forward-fix broken packages as
-`RELEASE.md` directs. Helper mutations require `CONFIRM=<action>`; preview
-with `DRY_RUN=1`.
+release record with `--verify-tag`; do not push another tag or retry
+publication. If a tag or signature is missing or invalid, stop and ask the
+maintainer; do not invent a source commit from current `main`. Forward-fix
+broken packages as `RELEASE.md` directs. Helper mutations require
+`CONFIRM=<action>`; preview with `DRY_RUN=1`.
 
 ## Git hooks
 
-Checks run in `.githooks/`, not in push/PR CI. Run `scripts/setup-hooks` after cloning. All checks must pass before you push. Never use `--no-verify`. `pre-commit`: Biome on the staged files (`pnpm run lint:fix` repairs most findings). `pre-push`: `npm audit signatures`, `pnpm run check`, `pnpm audit --audit-level high`.
-`pre-push` also warns, without blocking, when a push changes the build policy in `pnpm-workspace.yaml` or the lockfile entry of a package allowed to build. List each warned item in the PR description so the reviewer reviews it before approving the merge. Never add a commit trailer other than `Signed-off-by`.
+Checks run in `.githooks/`, not in push/PR CI. Run `scripts/setup-hooks` after
+cloning. All checks must pass before you push. Never use `--no-verify`.
+`pre-commit`: Biome on the staged files (`pnpm run lint:fix` repairs most
+findings). `pre-push`: `npm audit signatures`, `pnpm run check`,
+`pnpm audit --audit-level high`. `pre-push` also warns, without blocking, when a
+push changes the build policy in `pnpm-workspace.yaml` or the lockfile entry of
+a package allowed to build. List each warned item in the PR description so the
+reviewer reviews it before approving the merge. Never add a commit trailer other
+than `Signed-off-by`.

@@ -8,29 +8,62 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Compatibility
 
-- Support Node.js 22, 24 and 26: `engines.node` is now `>=22.19.0`, and typecheck plus tests pass on Node 22.19.0, 24.21.0 and 26.11.1. Development types move to `@types/node` 26.6.4.
-- The supported harness line keeps its span, from `0.1.5-rc.1` up to `0.3.0`, but is now spelled as one alternative per line, each bounded at `-0`. npm refused the `0.1.7` and `0.2.0` prerelease hosts under the single `>=0.1.5-rc.1 <0.3.0` span and nested a second framework copy. The harness gate also read that bare `<0.3.0` as admitting `0.3.0` release candidates. The matrix guard now rejects a range either reader would misread.
-- Verified against DeepSeek Harness `0.2.1-rc.2` and `0.2.1-rc.3`. The harness `devDependencies` compile against `0.2.1-rc.3`, which ships the same cordis `4.0.5` and schemastery `3.18.5` as `0.2.1-rc.2`. The supported range already admits `0.2.1-rc.3`, so it and the peers do not change. The published package is unchanged.
-- The matrix spec reads the shipped range and verified releases from `package.json` alone, so a harness bump no longer edits a second copy of them.
-- The cordis and schemastery peers stop below their next minor: `>=4.0.2 <4.1.0-0` and `>=3.18.2 <3.19.0-0`. The caret ranges also admitted `4.1` and `3.19`, which no verified harness ships.
+- Support Node.js 22, 24 and 26: `engines.node` is now `>=22.19.0`, and
+  typecheck plus tests pass on Node 22.19.0, 24.21.0 and 26.11.1. Development
+  types move to `@types/node` 26.6.4.
+- The supported harness line keeps its span, from `0.1.5-rc.1` up to `0.3.0`,
+  but is now spelled as one alternative per line, each bounded at `-0`. npm
+  refused the `0.1.7` and `0.2.0` prerelease hosts under the single
+  `>=0.1.5-rc.1 <0.3.0` span and nested a second framework copy. The harness
+  gate also read that bare `<0.3.0` as admitting `0.3.0` release candidates. The
+  matrix guard now rejects a range either reader would misread.
+- Verified against DeepSeek Harness `0.2.1-rc.2` and `0.2.1-rc.3`. The harness
+  `devDependencies` compile against `0.2.1-rc.3`, which ships the same cordis
+  `4.0.5` and schemastery `3.18.5` as `0.2.1-rc.2`. The supported range already
+  admits `0.2.1-rc.3`, so it and the peers do not change. The published package
+  is unchanged.
+- The matrix spec reads the shipped range and verified releases from
+  `package.json` alone, so a harness bump no longer edits a second copy of them.
+- The cordis and schemastery peers stop below their next minor:
+  `>=4.0.2 <4.1.0-0` and `>=3.18.2 <3.19.0-0`. The caret ranges also admitted
+  `4.1` and `3.19`, which no verified harness ships.
 
 ### Changed
 
-- Development checks lint and format the code with Biome `2.6.3`: the pre-commit hook checks the staged files, and `pnpm run check` checks the whole tree on every push. The code was reformatted once to the existing style. The published modules behave the same.
-- Every release now waits out the one-week release-age window. The temporary exemptions for the 0.2.1-rc.2 harness set and its framework releases are removed, because each entry has aged past the window. The published package is unchanged.
+- Development checks lint and format the code with Biome `2.6.3`: the pre-commit
+  hook checks the staged files, and `pnpm run check` checks the whole tree on
+  every push. The code was reformatted once to the existing style. The published
+  modules behave the same.
+- Every release now waits out the one-week release-age window. The temporary
+  exemptions for the 0.2.1-rc.2 harness set and its framework releases are
+  removed, because each entry has aged past the window. The published package is
+  unchanged.
 - Agent guidance now requires signed version tags, matching GitHub releases,
   publication approval, and npm readback so published versions keep a complete
   source and release record without accidental republication.
 - An admin's signed `v*` tag push now publishes automatically. The `npm-release`
   environment no longer waits for a maintainer approval, because the admin-only
   tag ruleset already makes the tag push the release decision.
-- Development tooling moves to `@types/node` 26.6.5 and `tsx` 4.23.15. The published package is unchanged.
-- Development builds use TypeScript 7.0.2. The published modules behave the same; the compiler now writes rewritten relative import paths and string literal types in declarations with single quotes.
+- Development tooling moves to `@types/node` 26.6.5 and `tsx` 4.23.15. The
+  published package is unchanged.
+- Development builds use TypeScript 7.0.2. The published modules behave the
+  same; the compiler now writes rewritten relative import paths and string
+  literal types in declarations with single quotes.
 
 ### Security
 
-- Development installs resolve `zod` `4.6.7` through a scoped `pnpm-workspace.yaml` override, clearing GHSA-mrhx-c7xc-m3w5 (oversized constrained collections exhaust memory during validation). The harness pins `zod` `4.4.3` exactly, so the override moves it up a minor within the same major. The published package is unchanged.
-- The daily harness-matrix job runs on Node.js `24.22.1` (was `24.20.0`), and both release jobs pin `24.22.1` instead of the runner's floating `24`. `24.22.1` is the 24.x security release that fixes CVE-2026-111497 (Brotli decoder out-of-bounds write) and CVE-2026-105483 and CVE-2026-106069 (TLS hostname check bypass). An exact pin means the release can no longer verify or publish on an unpatched cached runtime. Checks and tests pass on `24.22.1`. The published package is unchanged.
+- Development installs resolve `zod` `4.6.7` through a scoped
+  `pnpm-workspace.yaml` override, clearing GHSA-mrhx-c7xc-m3w5 (oversized
+  constrained collections exhaust memory during validation). The harness pins
+  `zod` `4.4.3` exactly, so the override moves it up a minor within the same
+  major. The published package is unchanged.
+- The daily harness-matrix job runs on Node.js `24.22.1` (was `24.20.0`), and
+  both release jobs pin `24.22.1` instead of the runner's floating `24`.
+  `24.22.1` is the 24.x security release that fixes CVE-2026-111497 (Brotli
+  decoder out-of-bounds write) and CVE-2026-105483 and CVE-2026-106069 (TLS
+  hostname check bypass). An exact pin means the release can no longer verify or
+  publish on an unpatched cached runtime. Checks and tests pass on `24.22.1`.
+  The published package is unchanged.
 
 ## [0.2.0] - 2026-09-30
 
@@ -45,18 +78,18 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - The plugin now serves the whole `>=0.1.5-rc.1 <0.3.0` harness range. The
-  former `<0.2.0` ceiling excluded the 0.2.0 line, and the harness disables a row
-  whose range does not admit its own version, so a profile on `0.2.0-rc.2` would
-  have dropped this bundle's commands without a browser ever opening.
+  former `<0.2.0` ceiling excluded the 0.2.0 line, and the harness disables a
+  row whose range does not admit its own version, so a profile on `0.2.0-rc.2`
+  would have dropped this bundle's commands without a browser ever opening.
 - `0.2.0-rc.2` joins `0.1.5-rc.2`, `0.1.5-rc.3`, and `0.1.7-rc.2` in
   `dsh.compatibility.dshReleases`: every pinned harness package resolves at that
   version, the gates pass against it, and a session driven from the packed
   tarball on the `0.2.0-rc.2` launcher mounts this row with no disable notice.
-  The clone's terminal surface did not start — the sibling bundles that supply it
-  still name `<0.1.6` peers — so no model reply was observed on this line yet.
-  `node tools/harness-matrix.mjs` guards the list against the declared range, the
-  peers, and the release the sources compile against, and CI runs it on every
-  change.
+  The clone's terminal surface did not start — the sibling bundles that supply
+  it still name `<0.1.6` peers — so no model reply was observed on this line
+  yet. `node tools/harness-matrix.mjs` guards the list against the declared
+  range, the peers, and the release the sources compile against, and CI runs it
+  on every change.
 
 ### Fixed
 
@@ -81,8 +114,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `/plannotator-annotate <file|folder|URL>` — annotate a document, a folder, or
   a web page.
 - `/plannotator-last` — annotate the newest assistant message.
-- A reviewer's feedback reaches the model as a steering message, so the agent can
-  act on it in the same turn.
+- A reviewer's feedback reaches the model as a steering message, so the agent
+  can act on it in the same turn.
 
 [Unreleased]: https://github.com/sagmans/dsh-plannotator/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/sagmans/dsh-plannotator/compare/v0.1.0...v0.2.0
