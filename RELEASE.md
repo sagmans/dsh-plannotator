@@ -1,19 +1,36 @@
 # Release Policy
 
-Applies to maintainers. Current release owner: repository owner ([`LICENSE`](LICENSE)).
+Applies to maintainers. Current release owner: repository owner
+([`LICENSE`](LICENSE)).
 
 ## Versioning
 
-[SemVer](https://semver.org). While at 0.x, minor bumps may contain breaking changes; patch bumps are fixes only. The git tag (`vX.Y.Z`) and `package.json` `version` must always match. The tag workflow fails before publish when they do not.
+[SemVer](https://semver.org). While at 0.x, minor bumps may contain breaking
+changes; patch bumps are fixes only. The git tag (`vX.Y.Z`) and `package.json`
+`version` must always match. The tag workflow fails before publish when they do
+not.
 
 ## Gates — all required before tagging
 
 1. Candidate lands on `main` through a reviewed PR (squash merge).
 2. `verify` CI green on the exact merged SHA.
-3. Locally on that SHA: `pnpm typecheck`, `pnpm test`, `pnpm run build`, `pnpm run test:build`, `pnpm test:release`, `node tools/harness-matrix.mjs`, `npm audit signatures`, `pnpm audit --audit-level high`, and `node tools/pack-smoke.mjs`.
-4. Dogfooding: install the packed candidate into a plugin profile whose harness is a verified release of the supported line (`dsh.compatibility.dsh`, listed in `dsh.compatibility.dshReleases`) and drive a real session through the slash commands. Confirm each of `/plannotator-plan`, `/plannotator-review`, `/plannotator-annotate`, and `/plannotator-last` opens the browser surface, that decisions and annotations reach the transcript, and that a missing binary fails with an actionable message rather than a hang. Unit tests do not prove the CLI launches, that the browser page loads, or that steered feedback returns to the agent.
-5. README accuracy pass: every documented command, profile path, and configuration reference still behaves as written.
-6. A published npm version is immutable. A broken release is forward-fixed, never unpublished (see [Rollback](#rollback)).
+3. Locally on that SHA: `pnpm typecheck`, `pnpm test`, `pnpm run build`,
+   `pnpm run test:build`, `pnpm test:release`, `node tools/harness-matrix.mjs`,
+   `npm audit signatures`, `pnpm audit --audit-level high`, and
+   `node tools/pack-smoke.mjs`.
+4. Dogfooding: install the packed candidate into a plugin profile whose harness
+   is a verified release of the supported line (`dsh.compatibility.dsh`, listed
+   in `dsh.compatibility.dshReleases`) and drive a real session through the
+   slash commands. Confirm each of `/plannotator-plan`, `/plannotator-review`,
+   `/plannotator-annotate`, and `/plannotator-last` opens the browser surface,
+   that decisions and annotations reach the transcript, and that a missing
+   binary fails with an actionable message rather than a hang. Unit tests do not
+   prove the CLI launches, that the browser page loads, or that steered feedback
+   returns to the agent.
+5. README accuracy pass: every documented command, profile path, and
+   configuration reference still behaves as written.
+6. A published npm version is immutable. A broken release is forward-fixed,
+   never unpublished (see [Rollback](#rollback)).
 
 ## Harness matrix
 
@@ -44,33 +61,66 @@ verified release.
 
 That failure is the matrix bump, and it is a release-sized change:
 
-1. Run `node tools/harness-matrix.mjs --check-registry` to read the release the harness now serves as `latest`. [`.github/workflows/harness-matrix.yml`](.github/workflows/harness-matrix.yml) runs the same tool daily and fails when `@deepseek-ai/dsh@latest` is not a verified release.
-2. Add it to `dsh.compatibility.dshReleases`, raise the `@deepseek-ai/dsh-*` `devDependencies` to it, and raise every peer or mounted package that names a release — plus every aliased install — to it as well; anything that still accepts the range stays as it is. When the release is a prerelease of an `X.Y.Z` tuple the range has no alternative for, split the last alternative at `X.Y.Z-0` in the range and in every peer that accepts it.
-3. `pnpm install` from a clean tree, then run every gate in [Gates](#gates--all-required-before-tagging). A dependency the new line resolves may sit inside the `minimumReleaseAge` window; add that exact version to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` rather than widening the exclude to the publisher.
-4. Dogfood a real session against the new release before it ships: install the packed candidate into a scratch profile and drive the commands per [README](README.md#development).
+1. Run `node tools/harness-matrix.mjs --check-registry` to read the release the
+   harness now serves as `latest`.
+   [`.github/workflows/harness-matrix.yml`](.github/workflows/harness-matrix.yml)
+   runs the same tool daily and fails when `@deepseek-ai/dsh@latest` is not a
+   verified release.
+2. Add it to `dsh.compatibility.dshReleases`, raise the `@deepseek-ai/dsh-*`
+   `devDependencies` to it, and raise every peer or mounted package that names a
+   release — plus every aliased install — to it as well; anything that still
+   accepts the range stays as it is. When the release is a prerelease of an
+   `X.Y.Z` tuple the range has no alternative for, split the last alternative at
+   `X.Y.Z-0` in the range and in every peer that accepts it.
+3. `pnpm install` from a clean tree, then run every gate in
+   [Gates](#gates--all-required-before-tagging). A dependency the new line
+   resolves may sit inside the `minimumReleaseAge` window; add that exact
+   version to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` rather than
+   widening the exclude to the publisher.
+4. Dogfood a real session against the new release before it ships: install the
+   packed candidate into a scratch profile and drive the commands per
+   [README](README.md#development).
 5. Land the bump through a reviewed PR and ship it with the next patch release.
 
 ## Release identity and authority
 
-Static identity lives in [`scripts/npm/target.env`](scripts/npm/target.env). Load it before every helper action:
+Static identity lives in [`scripts/npm/target.env`](scripts/npm/target.env).
+Load it before every helper action:
 
 ```sh
 set -a; . scripts/npm/target.env; set +a
 ```
 
-Per-release values are exported for one release only and are never stored in the repository: `PKG_VERSION`, `SOURCE_SHA`, `ARTIFACT`, `ARTIFACT_INTEGRITY`.
+Per-release values are exported for one release only and are never stored in the
+repository: `PKG_VERSION`, `SOURCE_SHA`, `ARTIFACT`, `ARTIFACT_INTEGRITY`.
 
-The helper is [`scripts/npm/release.py`](scripts/npm/release.py); [`pnpm test:release`](tests/release) exercises its guards through synthetic CLIs, and CI runs that suite on every change. No helper action writes to npm or GitHub without its own `CONFIRM=<action>` value. `DRY_RUN=1` prints the exact mutation instead of running it. Reading this policy, passing preflight, or exporting a variable is not approval.
+The helper is [`scripts/npm/release.py`](scripts/npm/release.py);
+[`pnpm test:release`](tests/release) exercises its guards through synthetic
+CLIs, and CI runs that suite on every change. No helper action writes to npm or
+GitHub without its own `CONFIRM=<action>` value. `DRY_RUN=1` prints the exact
+mutation instead of running it. Reading this policy, passing preflight, or
+exporting a variable is not approval.
 
-The helper rejects a redirected registry before it acts: it reads the effective `registry` and `@sagmans:registry` configuration and fails closed unless both resolve to `https://registry.npmjs.org/`. The trust commands refuse unknown flags, so that check replaces pinning the scoped key on the command line.
+The helper rejects a redirected registry before it acts: it reads the effective
+`registry` and `@sagmans:registry` configuration and fails closed unless both
+resolve to `https://registry.npmjs.org/`. The trust commands refuse unknown
+flags, so that check replaces pinning the scoped key on the command line.
 
-Trust reads need an interactive terminal. npm starts its browser two-factor approval only when stdin and stdout are terminals, so the helper gives those reads a pseudo-terminal and mirrors the approval URL to stderr; approve it in a browser when the helper pauses.
+Trust reads need an interactive terminal. npm starts its browser two-factor
+approval only when stdin and stdout are terminals, so the helper gives those
+reads a pseudo-terminal and mirrors the approval URL to stderr; approve it in a
+browser when the helper pauses.
 
-Prerequisites: `python3` 3.11 or newer, npm 11.15.0 or newer, authenticated `npm` and `gh` CLIs, repository administration access, and a clean checkout.
+Prerequisites: `python3` 3.11 or newer, npm 11.15.0 or newer, authenticated
+`npm` and `gh` CLIs, repository administration access, and a clean checkout.
 
 ## First publication (`v0.1.0` only)
 
-npm requires a package to exist before trusted publishing can be configured, so the `v0.1.0` tag verifies but skips the publish job in [`release.yml`](.github/workflows/release.yml). The release owner publishes that version by hand from a clean checkout of the exact signed tag. Keep the reviewed artefact outside the checkout and unchanged until publication completes.
+npm requires a package to exist before trusted publishing can be configured, so
+the `v0.1.0` tag verifies but skips the publish job in
+[`release.yml`](.github/workflows/release.yml). The release owner publishes that
+version by hand from a clean checkout of the exact signed tag. Keep the reviewed
+artefact outside the checkout and unchanged until publication completes.
 
 ```sh
 set -a; . scripts/npm/target.env; set +a
@@ -85,7 +135,8 @@ export ARTIFACT="${ARTIFACT_DIR}/sagmans-dsh-plannotator-${PKG_VERSION}.tgz"
 export ARTIFACT_INTEGRITY="sha512-$(openssl dgst -sha512 -binary "${ARTIFACT}" | openssl base64 -A)"
 ```
 
-Review the packed inventory and confirm the artefact came from the reviewed SHA. Then preview and publish:
+Review the packed inventory and confirm the artefact came from the reviewed SHA.
+Then preview and publish:
 
 ```sh
 DRY_RUN=1 python3 scripts/npm/release.py preflight
@@ -93,7 +144,14 @@ DRY_RUN=1 python3 scripts/npm/release.py bootstrap-publish
 CONFIRM=bootstrap-publish python3 scripts/npm/release.py bootstrap-publish
 ```
 
-`bootstrap-publish` refuses an existing package, publishes the reviewed tarball with lifecycle scripts disabled, and verifies the delivered integrity. Local publication cannot generate provenance; provenance begins with the OIDC releases that follow. The registry can take minutes to serve a version it has already accepted — observed at about six minutes for the tarball — so the helper repeats a read that did not complete, then reports; a read that answered with the wrong identity is not repeated, and a publication is never retried. If the result is ambiguous, inspect the registry before any retry.
+`bootstrap-publish` refuses an existing package, publishes the reviewed tarball
+with lifecycle scripts disabled, and verifies the delivered integrity. Local
+publication cannot generate provenance; provenance begins with the OIDC releases
+that follow. The registry can take minutes to serve a version it has already
+accepted — observed at about six minutes for the tarball — so the helper repeats
+a read that did not complete, then reports; a read that answered with the wrong
+identity is not repeated, and a publication is never retried. If the result is
+ambiguous, inspect the registry before any retry.
 
 ## Recurring release controls (once, after the bootstrap)
 
@@ -110,11 +168,26 @@ DRY_RUN=1 python3 scripts/npm/release.py harden-publishing
 CONFIRM=harden-publishing python3 scripts/npm/release.py harden-publishing
 ```
 
-- `setup-github-release` creates the `npm-release` environment, which admits only `v*` tags and has no required reviewer, and an admin-only `v*` tag ruleset. The ruleset makes an admin's signed tag push the release approval. It refuses to overwrite conflicting existing controls, including a reviewer or wait timer on the environment. GitHub drops role-based bypass actors when a repository changes owner, which leaves tag creation closed even to the release owner, so after a move confirm the ruleset still admits a human before tagging.
-- `configure-trust` binds publication to this repository's `release.yml` on the `npm-release` environment. The registry answers a publish grant with stage publish included, so that pair is the accepted configuration; a stage-only grant carries no publish authority and is refused, as is any conflicting existing trust.
-- `harden-publishing` requires two-factor authentication for publication and disallows traditional tokens, so the OIDC flow is the only publish path. Confirm the package settings on npmjs.com afterwards; the helper does not claim MFA readback.
+- `setup-github-release` creates the `npm-release` environment, which admits
+  only `v*` tags and has no required reviewer, and an admin-only `v*` tag
+  ruleset. The ruleset makes an admin's signed tag push the release approval. It
+  refuses to overwrite conflicting existing controls, including a reviewer or
+  wait timer on the environment. GitHub drops role-based bypass actors when a
+  repository changes owner, which leaves tag creation closed even to the release
+  owner, so after a move confirm the ruleset still admits a human before
+  tagging.
+- `configure-trust` binds publication to this repository's `release.yml` on the
+  `npm-release` environment. The registry answers a publish grant with stage
+  publish included, so that pair is the accepted configuration; a stage-only
+  grant carries no publish authority and is refused, as is any conflicting
+  existing trust.
+- `harden-publishing` requires two-factor authentication for publication and
+  disallows traditional tokens, so the OIDC flow is the only publish path.
+  Confirm the package settings on npmjs.com afterwards; the helper does not
+  claim MFA readback.
 
-Then verify identity, integrity, public access, and the exact trust. The trust read asks for browser approval, so run it from an interactive terminal:
+Then verify identity, integrity, public access, and the exact trust. The trust
+read asks for browser approval, so run it from an interactive terminal:
 
 ```sh
 DRY_RUN=1 python3 scripts/npm/release.py verify
@@ -123,21 +196,39 @@ python3 scripts/npm/release.py verify
 
 ## Tagging a release
 
-Draft the GitHub release notes against the candidate SHA before tagging. Tag creation for `v*` is restricted to repository admins by the ruleset above.
+Draft the GitHub release notes against the candidate SHA before tagging. Tag
+creation for `v*` is restricted to repository admins by the ruleset above.
 
 ```sh
 git tag -s -a "v${PKG_VERSION}" -m "v${PKG_VERSION}" <merged-sha>
 git push origin "v${PKG_VERSION}"
 ```
 
-The tag push is the release approval: only an admin can push a `v*` tag, so publication starts without a second approval. The push runs `release.yml`: it re-verifies the candidate, then the publish job runs on the `npm-release` environment and publishes through OIDC trusted publishing with automatic provenance. Create the GitHub release from the tag using the drafted notes after publication succeeds.
+The tag push is the release approval: only an admin can push a `v*` tag, so
+publication starts without a second approval. The push runs `release.yml`: it
+re-verifies the candidate, then the publish job runs on the `npm-release`
+environment and publishes through OIDC trusted publishing with automatic
+provenance. Create the GitHub release from the tag using the drafted notes after
+publication succeeds.
 
 ## Rollback
 
-- **Bad tag or release:** keep the signed tag, source SHA, and GitHub release record intact. npm versions are immutable, and deleting references breaks the source chain. Deprecate instead, mark the GitHub release as broken, and ship a patch release:
+- **Bad tag or release:** keep the signed tag, source SHA, and GitHub release
+  record intact. npm versions are immutable, and deleting references breaks the
+  source chain. Deprecate instead, mark the GitHub release as broken, and ship a
+  patch release:
+
   ```sh
   npm deprecate "@sagmans/dsh-plannotator@<version>" "<reason>; use @sagmans/dsh-plannotator@<replacement> instead"
   ```
-- **Bad browser surface or command behaviour:** patch release; never disable a running profile or rewrite a user's stored conversations or credentials.
-- **Broken trust configuration:** fix it with `configure-trust` after inspecting `npm trust list`; revoking credentials or changing account security needs separate approval.
-- **Restore a manual publish approval:** add the release owner as a required reviewer on the `npm-release` environment in the repository settings. The publish job then waits for that approval again. Update `setup-github-release` and this policy in the same change, because the helper refuses a reviewer gate as a conflict.
+
+- **Bad browser surface or command behaviour:** patch release; never disable a
+  running profile or rewrite a user's stored conversations or credentials.
+- **Broken trust configuration:** fix it with `configure-trust` after inspecting
+  `npm trust list`; revoking credentials or changing account security needs
+  separate approval.
+- **Restore a manual publish approval:** add the release owner as a required
+  reviewer on the `npm-release` environment in the repository settings. The
+  publish job then waits for that approval again. Update `setup-github-release`
+  and this policy in the same change, because the helper refuses a reviewer gate
+  as a conflict.
