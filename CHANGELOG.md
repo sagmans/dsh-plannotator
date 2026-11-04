@@ -36,6 +36,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Checks no longer run as GitHub workflows. The daily hosted harness-matrix job
+  is removed; the `pre-push` hook now reads the harness registry on every push
+  and warns, without blocking, when its `latest` is not a verified release. The
+  release workflow still publishes tags. The published package is unchanged.
 - Development checks lint and format the code with Biome `2.6.3`: the pre-commit
   hook checks the staged files, and `pnpm run check` checks the whole tree on
   every push. The code was reformatted once to the existing style. The published

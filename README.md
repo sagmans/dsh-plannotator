@@ -193,7 +193,8 @@ This repository's checks:
 
 - `pre-commit`: staged whitespace and conflict-marker check.
 - `pre-push`: `npm audit signatures`, `pnpm run check`,
-  `pnpm audit --audit-level high`.
+  `pnpm audit --audit-level high`, and a warning when the harness registry
+  serves an unverified `latest`.
 
 A pushed change to `pnpm-workspace.yaml`'s build policy, or a lockfile change to
 a package allowed to build (`node-pty`), makes `pre-push` print a warning that

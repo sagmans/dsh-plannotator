@@ -13,7 +13,8 @@ not.
 ## Gates — all required before tagging
 
 1. Candidate lands on `main` through a reviewed PR (squash merge).
-2. `verify` CI green on the exact merged SHA.
+2. The tracked `pre-push` hook passed on the exact SHA: `pnpm run check` and
+   the audits ([README](README.md#git-hooks)).
 3. Locally on that SHA: `pnpm typecheck`, `pnpm test`, `pnpm run build`,
    `pnpm run test:build`, `pnpm test:release`, `node tools/harness-matrix.mjs`,
    `npm audit signatures`, `pnpm audit --audit-level high`, and
@@ -52,9 +53,9 @@ The range has two readers, and it must satisfy both:
   `0.2.0-rc.2` and nests a second framework copy beside the host's. So each
   line gets a `>=lower <upper-0` alternative of its own, joined by `||`.
 
-`verify` runs `node tools/harness-matrix.mjs` on every change, which checks that
-matrix offline — the range parses as those alternatives, every verified release
-lies inside it under both readers, every harness
+`pnpm run check` runs `node tools/harness-matrix.mjs` on every push, which
+checks that matrix offline — the range parses as those alternatives, every
+verified release lies inside it under both readers, every harness
 peer and mounted package accepts the range or names a verified release, every
 aliased install names one, and the harness `devDependencies` name exactly one
 verified release.
@@ -63,9 +64,8 @@ That failure is the matrix bump, and it is a release-sized change:
 
 1. Run `node tools/harness-matrix.mjs --check-registry` to read the release the
    harness now serves as `latest`.
-   [`.github/workflows/harness-matrix.yml`](.github/workflows/harness-matrix.yml)
-   runs the same tool daily and fails when `@deepseek-ai/dsh@latest` is not a
-   verified release.
+   The `pre-push` hook runs the same tool on every push and warns, without
+   blocking, when `@deepseek-ai/dsh@latest` is not a verified release.
 2. Add it to `dsh.compatibility.dshReleases`, raise the `@deepseek-ai/dsh-*`
    `devDependencies` to it, and raise every peer or mounted package that names a
    release — plus every aliased install — to it as well; anything that still
@@ -96,10 +96,10 @@ repository: `PKG_VERSION`, `SOURCE_SHA`, `ARTIFACT`, `ARTIFACT_INTEGRITY`.
 
 The helper is [`scripts/npm/release.py`](scripts/npm/release.py);
 [`pnpm test:release`](tests/release) exercises its guards through synthetic
-CLIs, and CI runs that suite on every change. No helper action writes to npm or
-GitHub without its own `CONFIRM=<action>` value. `DRY_RUN=1` prints the exact
-mutation instead of running it. Reading this policy, passing preflight, or
-exporting a variable is not approval.
+CLIs, and the `pre-push` hook runs that suite on every push. No helper action
+writes to npm or GitHub without its own `CONFIRM=<action>` value.
+`DRY_RUN=1` prints the exact mutation instead of running it. Reading this
+policy, passing preflight, or exporting a variable is not approval.
 
 The helper rejects a redirected registry before it acts: it reads the effective
 `registry` and `@sagmans:registry` configuration and fails closed unless both

@@ -1,0 +1,20 @@
+#!/bin/sh
+# Reads the release the harness registry serves as latest and warns when it is
+# not a verified release. This replaces the daily hosted harness-matrix job:
+# checks run only in local hooks, so drift is reported on the next push
+# instead of on a schedule. The offline matrix guard in `pnpm run check`
+# (20-check) still blocks a broken matrix.
+#
+# A warning, not a failure: a new harness release has to age past
+# minimumReleaseAge before the bump can install it (RELEASE.md#harness-matrix),
+# so blocking here would also block every unrelated push for that week. A
+# failed registry read warns too, because offline pushes must stay possible
+# and nothing else is checked here.
+set -eu
+
+top=$(git rev-parse --show-toplevel)
+if ! out=$(node "$top/tools/harness-matrix.mjs" --check-registry 2>&1); then
+	echo "$out" >&2
+	echo "pre-push: warning: $(basename -- "$0"): the harness registry latest is not verified or could not be read; bump the matrix per RELEASE.md#harness-matrix" >&2
+fi
+exit 0

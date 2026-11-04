@@ -18,7 +18,8 @@ release policy is `RELEASE.md` and is authoritative over anything here.
   `.npmrc` sets `strict-peer-dependencies=true` and `auto-install-peers=true`,
   so a stray dependency fails the install instead of resolving from a transitive
   copy.
-- Node >=22.19 (`engines`); CI runs Node 24.22.1 with pnpm 11.21.0.
+- Node >=22.19 (`engines`); the release workflow runs Node 24.22.1 with
+  pnpm 11.21.0.
 - The bundle registers commands only. `cordis.patch.yml` inserts a
   self-inserting row and replaces nothing in the base, so a profile without this
   plugin behaves exactly as before.
@@ -172,9 +173,10 @@ cloning. All checks must pass before you push. Never use `--no-verify`.
 findings). `pre-push`: `npm audit signatures`, `pnpm run check`,
 `pnpm audit --audit-level high`. `pre-push` also warns, without blocking, when a
 push changes the build policy in `pnpm-workspace.yaml` or the lockfile entry of
-a package allowed to build. List each warned item in the PR description so the
-reviewer reviews it before approving the merge. Never add a commit trailer other
-than `Signed-off-by`.
+a package allowed to build, and when the harness registry serves an unverified
+`latest` (bump the matrix per `RELEASE.md`). List each warned build item in the
+PR description so the reviewer reviews it before approving the merge. Never add
+a commit trailer other than `Signed-off-by`.
 
 Commit messages follow `.githooks/GIT_CONVENTION.md`, which `commit-msg` and
 `pre-push` enforce. The generic checks need gitleaks, osv-scanner, semgrep,
