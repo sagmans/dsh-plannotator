@@ -36,6 +36,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The harness matrix guard gives up on the registry read after 10 seconds and
+  reports the cause, so a stalled network cannot hang a push. The published
+  package is unchanged.
 - Checks no longer run as GitHub workflows. The daily hosted harness-matrix job
   is removed; the `pre-push` hook now reads the harness registry on every push
   and warns, without blocking, when its `latest` is not a verified release. The

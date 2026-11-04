@@ -76,7 +76,11 @@ function compareIdentifiers(left, right) {
   if (typeof left === 'number' && typeof right === 'number') return left - right
   if (typeof left === 'number') return -1
   if (typeof right === 'number') return 1
-  return left === right ? 0 : left < right ? -1 : 1
+  // Plain branches, not a nested ternary: lizard misreads `a < b ? x : y` as
+  // an open block, and the pre-push complexity check then fails this file.
+  if (left === right) return 0
+  if (left < right) return -1
+  return 1
 }
 
 /** Orders two parsed versions with semver's rule that a prerelease precedes its release. */
