@@ -62,6 +62,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+- The release workflow no longer uses a dependency cache in either job. A tag
+  build publishes to npm, so a cache that another run wrote could have poisoned
+  the published artefact. The published package is unchanged.
 - Development installs resolve `zod` `4.6.7` through a scoped
   `pnpm-workspace.yaml` override, clearing GHSA-mrhx-c7xc-m3w5 (oversized
   constrained collections exhaust memory during validation). The harness pins
