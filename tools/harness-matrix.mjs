@@ -46,6 +46,15 @@ const ALTERNATIVE_SEPARATOR = '||'
  */
 const LOWEST_PRERELEASE = '0'
 
+/** The registry document whose `latest` dist-tag the harness must have verified. */
+const REGISTRY_URL = 'https://registry.npmjs.org/@deepseek-ai%2Fdsh'
+
+/**
+ * How long the registry read may take before it fails: the pre-push hook runs
+ * this check, so a stalled network must end the read, not hang the push.
+ */
+const REGISTRY_TIMEOUT_MS = 10_000
+
 /**
  * One version split into its release tuple and prerelease identifiers.
  * @throws Error when the value is not a plain semver version.
@@ -252,8 +261,19 @@ for (const version of compiledVersions) {
 }
 
 if (argv.includes('--check-registry')) {
-  const response = await fetch('https://registry.npmjs.org/@deepseek-ai%2Fdsh')
-  if (!response.ok) {
+  let response
+  try {
+    response = await fetch(REGISTRY_URL, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT_MS) })
+  } catch (error) {
+    // A timeout or network failure is a problem to report, not a crash: the
+    // hook reads the exit status and the message names the cause.
+    problems.push(
+      `the registry read of ${REGISTRY_URL} failed after at most ${REGISTRY_TIMEOUT_MS} ms: ${error?.name ?? 'Error'}: ${error?.message ?? error}`,
+    )
+  }
+  if (response === undefined) {
+    // The catch above already recorded the failure.
+  } else if (!response.ok) {
     problems.push(`the registry read failed with HTTP ${response.status}`)
   } else {
     const metadata = await response.json()
