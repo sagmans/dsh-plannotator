@@ -36,6 +36,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The pre-push hook now stops a step that hangs. Network reads, installs, test
+  suites, builds and daemon calls each run under a limit. At the limit, the push
+  fails and names the step and the elapsed time. The limits are constants at the
+  top of each check.
 - The harness matrix guard gives up on the registry read after 10 seconds and
   reports the cause, so a stalled network cannot hang a push. The published
   package is unchanged.

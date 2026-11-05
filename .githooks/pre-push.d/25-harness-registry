@@ -12,8 +12,16 @@
 # and nothing else is checked here.
 set -eu
 
+# Above the tool's own request limit, so the tool reports a slow registry itself
+# and this limit only catches a tool that hangs.
+REGISTRY_TIMEOUT_SECONDS=120
+
+# Helpers (run_with_timeout) from .githooks/lib.
+# shellcheck source=/dev/null
+. "${HOOK_HELPERS:?run from .githooks (scripts/setup-hooks)}"
+
 top=$(git rev-parse --show-toplevel)
-if ! out=$(node "$top/tools/harness-matrix.mjs" --check-registry 2>&1); then
+if ! out=$(run_with_timeout "$REGISTRY_TIMEOUT_SECONDS" node "$top/tools/harness-matrix.mjs" --check-registry 2>&1); then
 	echo "$out" >&2
 	echo "pre-push: warning: $(basename -- "$0"): the harness registry latest is not verified or could not be read; bump the matrix per RELEASE.md#harness-matrix" >&2
 fi
