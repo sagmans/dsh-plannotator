@@ -12,7 +12,7 @@ not.
 
 ## Gates — all required before tagging
 
-1. Candidate lands on `main` through a reviewed PR (squash merge).
+1. Candidate lands on `main` as a signed push.
 2. The tracked `pre-push` hook passed on the exact SHA: `pnpm run check` and
    the audits ([README](README.md#git-hooks)).
 3. Locally on that SHA: `pnpm typecheck`, `pnpm test`, `pnpm run build`,
@@ -80,7 +80,7 @@ That failure is the matrix bump, and it is a release-sized change:
 4. Dogfood a real session against the new release before it ships: install the
    packed candidate into a scratch profile and drive the commands per
    [README](README.md#development).
-5. Land the bump through a reviewed PR and ship it with the next patch release.
+5. Land the bump on `main` and ship it with the next patch release.
 
 ## Release identity and authority
 
@@ -200,7 +200,7 @@ Draft the GitHub release notes against the candidate SHA before tagging. Tag
 creation for `v*` is restricted to repository admins by the ruleset above.
 
 ```sh
-git tag -s -a "v${PKG_VERSION}" -m "v${PKG_VERSION}" <merged-sha>
+git tag -s -a "v${PKG_VERSION}" -m "v${PKG_VERSION}" <candidate-sha>
 git push origin "v${PKG_VERSION}"
 ```
 

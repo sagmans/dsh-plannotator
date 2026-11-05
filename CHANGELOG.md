@@ -66,6 +66,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   push to `main`, not through a pull request.
 - `README.md` states the trunk-based delivery flow: changes land by a signed
   push to `main`, not through a pull request.
+- `RELEASE.md` states the trunk-based delivery flow: a harness matrix bump lands
+  on `main`, and the release tag goes on the candidate commit.
 
 ### Security
 
