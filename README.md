@@ -198,6 +198,6 @@ This repository's checks:
 
 A pushed change to `pnpm-workspace.yaml`'s build policy, or a lockfile change to
 a package allowed to build (`node-pty`), makes `pre-push` print a warning that
-names each change. The push continues. List those changes in the PR description:
-the PR reviewer must review them before approving the merge. Commits carry no
+names each change. The push continues. List those changes in the push approval
+request, so the maintainer reviews them before the push. Commits carry no
 trailer other than `Signed-off-by`.
