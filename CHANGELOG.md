@@ -62,6 +62,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Development builds use TypeScript 7.0.2. The published modules behave the
   same; the compiler now writes rewritten relative import paths and string
   literal types in declarations with single quotes.
+- `AGENTS.md` states the trunk-based delivery flow: changes land by a signed
+  push to `main`, not through a pull request.
 
 ### Security
 

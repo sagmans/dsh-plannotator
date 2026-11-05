@@ -130,15 +130,16 @@ follow-up.
 ## Release and publication
 
 Read [RELEASE.md](RELEASE.md) before preparing a version, pushing a release tag,
-publishing, or repairing a release record. Shipping a documentation or code PR
-is not approval to publish. Require explicit maintainer approval for publication
-and each remote release action; never publish on your own initiative.
+publishing, or repairing a release record. Pushing a documentation or code
+change is not approval to publish. Require explicit maintainer approval for
+publication and each remote release action; never publish on your own
+initiative.
 
-1. Land the candidate through a reviewed PR to `main`. Match `package.json`
-   `version`, the `vX.Y.Z` tag, and the versioned `CHANGELOG.md` entry.
-   Pass the release gates in `RELEASE.md` on the exact merged commit.
+1. Land the candidate on `main`. Match `package.json` `version`, the `vX.Y.Z`
+   tag, and the versioned `CHANGELOG.md` entry.
+   Pass the release gates in `RELEASE.md` on the exact pushed commit.
 2. Create an annotated, signed tag on that commit:
-   `git tag -s -a "vX.Y.Z" -m "vX.Y.Z" <merged-sha>`.
+   `git tag -s -a "vX.Y.Z" -m "vX.Y.Z" <candidate-sha>`.
    Verify it with `git verify-tag "vX.Y.Z"`. Never use a lightweight or unsigned
    release tag; require GitHub to verify the signature after the approved push.
 3. Push only that tag with `git push origin "vX.Y.Z"` after approval.
@@ -175,8 +176,8 @@ findings). `pre-push`: `npm audit signatures`, `pnpm run check`,
 push changes the build policy in `pnpm-workspace.yaml` or the lockfile entry of
 a package allowed to build, and when the harness registry serves an unverified
 `latest` (bump the matrix per `RELEASE.md`). List each warned build item in the
-PR description so the reviewer reviews it before approving the merge. Never add
-a commit trailer other than `Signed-off-by`.
+push approval request so the maintainer reviews it before the push. Never add a
+commit trailer other than `Signed-off-by`.
 
 Commit messages follow `.githooks/GIT_CONVENTION.md`, which `commit-msg` and
 `pre-push` enforce. The generic checks need gitleaks, osv-scanner, semgrep,
