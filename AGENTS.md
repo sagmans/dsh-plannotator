@@ -12,8 +12,9 @@ release policy is `RELEASE.md` and is authoritative over anything here.
   alike, profile `tui` only (`package.json` `dsh.compatibility`, the single
   source; [RELEASE.md](RELEASE.md) explains the shape). The verified releases
   are `0.1.5-rc.2`, `0.1.5-rc.3`, `0.1.7-rc.2`, `0.2.0-rc.2`, `0.2.1-rc.2`,
-  `0.2.1-rc.3`, and `0.2.1-rc.5`; the harness `devDependencies` compile against
-  one of them, and `node tools/harness-matrix.mjs` guards that pair.
+  `0.2.1-rc.3`, `0.2.1-rc.5`, and `0.2.2-rc.1`; the harness `devDependencies`
+  compile against one of them, and `node tools/harness-matrix.mjs` guards that
+  pair.
 - Zero runtime dependencies. Harness packages are peers supplied by the profile;
   `.npmrc` sets `strict-peer-dependencies=true` and `auto-install-peers=true`,
   so a stray dependency fails the install instead of resolving from a transitive
