@@ -75,10 +75,10 @@
     "test:build": "node --test \"tests/*.test.mjs\"",
     "pack-smoke": "node tools/pack-smoke.mjs",
     "drive": "node tools/pty-drive.mjs",
-    "test:release": "python3 -m unittest discover -s tests/release -p 'test_*.py'",
+    "test:release": "uv run --no-project --python-preference only-managed python -m unittest discover -s tests/release -p 'test_*.py'",
     "lint": "biome ci --error-on-warnings .",
     "lint:fix": "biome check --write .",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm test && pnpm run build && pnpm run test:build && pnpm test:release && node tools/harness-matrix.mjs && pnpm run pack-smoke",
+    "check": "node tools/python-policy.mjs && pnpm run lint && pnpm run typecheck && pnpm test && pnpm run build && pnpm run test:build && pnpm test:release && node tools/harness-matrix.mjs && pnpm run pack-smoke",
     "prepack": "pnpm run build",
     "prepublishOnly": "pnpm run typecheck && pnpm test && pnpm test:release"
   },

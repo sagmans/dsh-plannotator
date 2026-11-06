@@ -6,6 +6,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Release-helper checks require uv-managed Python, including when the shell
+  environment does not provide the usual Python path.
+
 ### Compatibility
 
 - Support Node.js 22, 24 and 26: `engines.node` is now `>=22.19.0`, and
