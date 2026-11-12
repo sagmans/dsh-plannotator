@@ -89,6 +89,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+- Retired the temporary release-age waiver for `0.2.2-rc.1` and its
+  dependencies after every exempt version cleared the seven-day window.
+
 - The release workflow no longer uses a dependency cache in either job. A tag
   build publishes to npm, so a cache that another run wrote could have poisoned
   the published artefact. The published package is unchanged.

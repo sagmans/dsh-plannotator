@@ -1,32 +1,5 @@
-# Supply-chain policy for this repository.
-# Newly resolved releases stay out for their first week (minutes). The only
-# exceptions are the exact versions a verified harness release ships, because
-# the matrix bump has to test the release the registry serves as latest
-# (RELEASE.md). Each entry names one version, never a publisher, and is dropped
-# once nothing resolves it.
+# Newly resolved releases wait a week so compromise reports can surface.
 minimumReleaseAge: 10080
-minimumReleaseAgeExclude:
-  # Harness 0.2.2-rc.1, the registry's latest, and the framework releases it
-  # pins. pnpm verifies each lockfile entry against the window even on a frozen
-  # install, so the list is needed until these mature. Remove it after
-  # 2026-11-11 09:02 UTC, when the youngest entry (published 2026-11-04
-  # 09:01 UTC) leaves the window.
-  - '@deepseek-ai/cordis@4.1.0'
-  - '@deepseek-ai/cosmokit@1.9.0'
-  - '@deepseek-ai/dsh-agent@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-attachment@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-brand@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-commands@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-llm@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-scope@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-session@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-session-projection@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-system-prompt@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-timeout@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-typert-protocol@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-util-crypto@0.2.2-rc.1'
-  - '@deepseek-ai/dsh-util-values@0.2.2-rc.1'
-  - '@deepseek-ai/schemastery@3.19.0'
 
 # Only reviewed packages may run install or build scripts: exact names, no
 # globs. Any package with a build script that is not listed fails the install
