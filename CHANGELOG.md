@@ -55,6 +55,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Pin repository tooling in `mise.toml`, `packageManager`, and
+  `pyproject.toml`/`uv.lock`, enforce fail-closed Python (`ruff` format/lint,
+  `mypy`) and shell (`shellcheck`, `shfmt`) checks across `pre-commit` and
+  `pnpm run check`, verify tool floors before `pre-push` dependency install,
+  and force online `pnpm audit` at `pre-push`. The published package is
+  unchanged.
 - The pre-push hook now stops a step that hangs. Network reads, installs, test
   suites, builds and daemon calls each run under a limit. At the limit, the push
   fails and names the step and the elapsed time. The limits are constants at the
