@@ -42,6 +42,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   for, so the `0.2.1` line is bounded at `0.2.2-0` and the `0.2.2` line gets
   its own alternative. The version stays `0.2.0`; the next release publishes
   the wider peers.
+- Verified against DeepSeek Harness `0.2.2-rc.5`, the release the registry
+  serves as `latest`. The harness `devDependencies` compile against it with the
+  same cordis `4.1.0` and schemastery `3.19.0`. The supported range already
+  admits it, so it and the peers do not change. The published package is
+  unchanged.
 - The matrix spec reads the shipped range and verified releases from
   `package.json` alone, so a harness bump no longer edits a second copy of them.
 - The cordis and schemastery peers stop below their next minor:
@@ -89,6 +94,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+- Exempted the exact `0.2.2-rc.5` harness packages from the one-week
+  release-age window, with the owner's approval. The youngest entry leaves the
+  window on 2026-11-25 12:54 UTC; remove the exemption then.
 - Retired the temporary release-age waiver for `0.2.2-rc.1` and its
   dependencies after every exempt version cleared the seven-day window.
 

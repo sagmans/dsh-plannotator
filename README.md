@@ -29,7 +29,7 @@ still works exactly as before.
 - DeepSeek Harness `0.1.5-rc.1` or newer, older than `0.3.0` and its
   prereleases. The releases driven against a real profile are `0.1.5-rc.2`,
   `0.1.5-rc.3`, `0.1.7-rc.2`, `0.2.0-rc.2`, `0.2.1-rc.2`, `0.2.1-rc.3`,
-  `0.2.1-rc.5`, and `0.2.2-rc.1`; `package.json`
+  `0.2.1-rc.5`, `0.2.2-rc.1`, and `0.2.2-rc.5`; `package.json`
   `dsh.compatibility.dshReleases` lists them.
 - The `plannotator` CLI on `PATH`, or pointed at by configuration. Install it
   the way its own documentation describes; this plugin never downloads it.
